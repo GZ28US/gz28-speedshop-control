@@ -1,3 +1,4 @@
+console.log('WORKER VERSION 2')
 const POLL_URL = 'https://gz28-speedshop-control.vercel.app/api/whatsapp-poll'
 
 async function run() {
