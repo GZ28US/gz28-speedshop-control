@@ -35,25 +35,27 @@ export async function GET() {
     return NextResponse.json({ success: true, message: 'No messages found' })
   }
 
-  const latestMessage = messages.find((message: any) => {
-  const body = String(message.body || '').trim()
+  const latestMessage = [...messages]
+  .reverse()
+  .find((message: any) => {
+    const body = String(message.body || '').trim()
 
-  const botMessages = [
-    'Amount?',
-    'Please send a valid amount. Example: USD 150',
-    'Choose main category:',
-    'Choose subcategory:',
-    'Description?',
-    'Confirm expense:',
-    'Expense saved',
-    'Expense canceled',
-  ]
+    const ignoredMessages = [
+      'Amount?',
+      'Please send a valid amount. Example: USD 150',
+      'Choose main category:',
+      'Choose subcategory:',
+      'Description?',
+      'Confirm expense:',
+      'Expense saved',
+      'Expense canceled',
+    ]
 
-  return (
-    body &&
-    !botMessages.some(botText => body.startsWith(botText))
-  )
-})
+    return (
+      body &&
+      !ignoredMessages.some(text => body.startsWith(text))
+    )
+  })
   const messageId = latestMessage.id
   const text = latestMessage.body?.trim() || ''
   const normalizedText = text.toLowerCase()
