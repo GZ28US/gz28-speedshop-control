@@ -16,9 +16,13 @@ async function sendMessage(text: string) {
     }),
   })
 
-  const result = await response.text()
-  console.log('UltraMsg send response:', result)
-  return result
+  const resultText = await response.text()
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    body: resultText,
+  }
 }
 
 function parseAmount(text: string) {
@@ -71,10 +75,12 @@ export async function GET() {
     return NextResponse.json({ success: true, message: 'No messages found' })
   }
 
-  const userMessages = messages.filter((message: any) => {
-    const body = String(message.body || '').trim()
-    return message.id && body && !isBotMessage(body)
-  })
+  const userMessages = messages
+    .filter((message: any) => {
+      const body = String(message.body || '').trim()
+      return message.id && body && !isBotMessage(body)
+    })
+    .sort((a: any, b: any) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
 
   let nextMessage: any = null
 
@@ -112,10 +118,14 @@ export async function GET() {
       current_step: 'amount',
     })
 
-    await sendMessage('Amount?')
+    const send = await sendMessage('Amount?')
     await markProcessed(messageId)
 
-    return NextResponse.json({ success: true, message: 'Started expense flow' })
+    return NextResponse.json({
+      success: true,
+      message: 'Started expense flow',
+      sent: send,
+    })
   }
 
   if (session.current_step === 'amount') {
@@ -130,9 +140,15 @@ export async function GET() {
     const amount = parseAmount(text)
 
     if (!amount) {
-      await sendMessage('Please send a valid amount. Example: USD 150')
+      const send = await sendMessage('Please send a valid amount. Example: USD 150')
       await markProcessed(messageId)
-      return NextResponse.json({ success: true, message: 'Invalid amount', body: text })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid amount',
+        body: text,
+        sent: send,
+      })
     }
 
     await supabase
@@ -147,13 +163,18 @@ export async function GET() {
       .is('parent_id', null)
       .order('code')
 
-    await sendMessage(
+    const send = await sendMessage(
       'Choose main category:\n' +
         categories?.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
     )
 
     await markProcessed(messageId)
-    return NextResponse.json({ success: true, message: 'Asked category' })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked category',
+      sent: send,
+    })
   }
 
   if (session.current_step === 'main_category') {
@@ -169,9 +190,15 @@ export async function GET() {
     const selected = categories?.[choice - 1]
 
     if (!selected) {
-      await sendMessage('Invalid option. Please choose a number from the list.')
+      const send = await sendMessage('Invalid option. Please choose a number from the list.')
       await markProcessed(messageId)
-      return NextResponse.json({ success: true, message: 'Invalid main category', body: text })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid main category',
+        body: text,
+        sent: send,
+      })
     }
 
     await supabase
@@ -194,19 +221,28 @@ export async function GET() {
         .update({ current_step: 'description' })
         .eq('id', session.id)
 
-      await sendMessage('Description?')
+      const send = await sendMessage('Description?')
       await markProcessed(messageId)
 
-      return NextResponse.json({ success: true, message: 'Asked description' })
+      return NextResponse.json({
+        success: true,
+        message: 'Asked description',
+        sent: send,
+      })
     }
 
-    await sendMessage(
+    const send = await sendMessage(
       'Choose subcategory:\n' +
         subcategories.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
     )
 
     await markProcessed(messageId)
-    return NextResponse.json({ success: true, message: 'Asked subcategory' })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked subcategory',
+      sent: send,
+    })
   }
 
   if (session.current_step === 'subcategory') {
@@ -221,9 +257,15 @@ export async function GET() {
     const selected = subcategories?.[choice - 1]
 
     if (!selected) {
-      await sendMessage('Invalid option. Please choose a number from the list.')
+      const send = await sendMessage('Invalid option. Please choose a number from the list.')
       await markProcessed(messageId)
-      return NextResponse.json({ success: true, message: 'Invalid subcategory', body: text })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid subcategory',
+        body: text,
+        sent: send,
+      })
     }
 
     await supabase
@@ -234,10 +276,14 @@ export async function GET() {
       })
       .eq('id', session.id)
 
-    await sendMessage('Description?')
+    const send = await sendMessage('Description?')
     await markProcessed(messageId)
 
-    return NextResponse.json({ success: true, message: 'Asked description' })
+    return NextResponse.json({
+      success: true,
+      message: 'Asked description',
+      sent: send,
+    })
   }
 
   if (session.current_step === 'description') {
@@ -255,7 +301,7 @@ export async function GET() {
       .eq('id', session.selected_category_id)
       .single()
 
-    await sendMessage(
+    const send = await sendMessage(
       `Confirm expense:\n` +
         `Amount: USD ${session.amount}\n` +
         `Category: ${category?.name}\n` +
@@ -264,7 +310,12 @@ export async function GET() {
     )
 
     await markProcessed(messageId)
-    return NextResponse.json({ success: true, message: 'Asked confirmation' })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked confirmation',
+      sent: send,
+    })
   }
 
   if (session.current_step === 'confirm') {
@@ -283,10 +334,14 @@ export async function GET() {
         .update({ is_completed: true })
         .eq('id', session.id)
 
-      await sendMessage('Expense saved ✅')
+      const send = await sendMessage('Expense saved ✅')
       await markProcessed(messageId)
 
-      return NextResponse.json({ success: true, message: 'Expense saved' })
+      return NextResponse.json({
+        success: true,
+        message: 'Expense saved',
+        sent: send,
+      })
     }
 
     if (normalizedText === 'no') {
@@ -295,16 +350,25 @@ export async function GET() {
         .update({ is_completed: true })
         .eq('id', session.id)
 
-      await sendMessage('Expense canceled.')
+      const send = await sendMessage('Expense canceled.')
       await markProcessed(messageId)
 
-      return NextResponse.json({ success: true, message: 'Expense canceled' })
+      return NextResponse.json({
+        success: true,
+        message: 'Expense canceled',
+        sent: send,
+      })
     }
 
-    await sendMessage('Please reply YES to save or NO to cancel.')
+    const send = await sendMessage('Please reply YES to save or NO to cancel.')
     await markProcessed(messageId)
 
-    return NextResponse.json({ success: true, message: 'Waiting confirmation', body: text })
+    return NextResponse.json({
+      success: true,
+      message: 'Waiting confirmation',
+      body: text,
+      sent: send,
+    })
   }
 
   await markProcessed(messageId)
