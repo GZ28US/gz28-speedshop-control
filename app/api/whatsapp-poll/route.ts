@@ -69,7 +69,7 @@ async function getChildren(parentId: string) {
     .from('categories')
     .select('id, name, code')
     .eq('parent_id', parentId)
-    .order('name')
+    .order('code')
 
   return data || []
 }
