@@ -64,6 +64,16 @@ async function markProcessed(messageId: string) {
     .upsert({ message_id: messageId })
 }
 
+async function getChildren(parentId: string) {
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name, code')
+    .eq('parent_id', parentId)
+    .order('name')
+
+  return data || []
+}
+
 export async function GET() {
   const response = await fetch(
     `https://api.ultramsg.com/${INSTANCE_ID}/chats/messages?token=${TOKEN}&chatId=${GROUP_ID}&limit=20`
@@ -110,12 +120,7 @@ export async function GET() {
   if (!session) {
     if (normalizedText !== 'expense') {
       await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Message ignored',
-        body: text,
-      })
+      return NextResponse.json({ success: true, message: 'Message ignored', body: text })
     }
 
     await supabase.from('whatsapp_expense_sessions').insert({
@@ -124,7 +129,6 @@ export async function GET() {
     })
 
     const send = await sendMessage('Amount?')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -148,7 +152,6 @@ export async function GET() {
 
     if (!amount) {
       const send = await sendMessage('Please send a valid amount. Example: USD 150')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -202,7 +205,6 @@ export async function GET() {
 
     if (!selected) {
       const send = await sendMessage('Invalid option. Please choose a number from the list.')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -213,73 +215,27 @@ export async function GET() {
       })
     }
 
-    await supabase
-      .from('whatsapp_expense_sessions')
-      .update({
-        selected_category_id: selected.id,
-        current_step: 'subcategory',
-      })
-      .eq('id', session.id)
+    const children = await getChildren(selected.id)
 
-    const { data: subcategories } = await supabase
-      .from('categories')
-      .select('id, name, code')
-      .eq('parent_id', selected.id)
-      .order('name')
-
-    if (!subcategories || subcategories.length === 0) {
+    if (children.length > 0) {
       await supabase
         .from('whatsapp_expense_sessions')
         .update({
-          current_step: 'description',
+          selected_category_id: selected.id,
+          current_step: 'subcategory',
         })
         .eq('id', session.id)
 
-      const send = await sendMessage('Description?')
+      const send = await sendMessage(
+        'Choose subcategory:\n' +
+          children.map((c, i) => `${i}. ${c.name}`).join('\n')
+      )
 
       await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
-        message: 'Asked description',
-        sent: send,
-      })
-    }
-
-    const send = await sendMessage(
-      'Choose subcategory:\n' +
-        subcategories.map((c, i) => `${i}. ${c.name}`).join('\n')
-    )
-
-    await markProcessed(messageId)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Asked subcategory',
-      sent: send,
-    })
-  }
-
-  if (session.current_step === 'subcategory') {
-    const choice = Number(text)
-
-    const { data: subcategories } = await supabase
-      .from('categories')
-      .select('id, name, code')
-      .eq('parent_id', session.selected_category_id)
-      .order('name')
-
-    const selected = subcategories?.[choice]
-
-    if (!selected) {
-      const send = await sendMessage('Invalid option. Please choose a number from the list.')
-
-      await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Invalid subcategory',
-        body: text,
+        message: 'Asked subcategory',
         sent: send,
       })
     }
@@ -293,7 +249,68 @@ export async function GET() {
       .eq('id', session.id)
 
     const send = await sendMessage('Description?')
+    await markProcessed(messageId)
 
+    return NextResponse.json({
+      success: true,
+      message: 'Asked description',
+      sent: send,
+    })
+  }
+
+  if (session.current_step === 'subcategory') {
+    const choice = Number(text)
+
+    const subcategories = await getChildren(session.selected_category_id)
+
+    const selected = subcategories?.[choice]
+
+    if (!selected) {
+      const send = await sendMessage('Invalid option. Please choose a number from the list.')
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid subcategory',
+        body: text,
+        sent: send,
+      })
+    }
+
+    const children = await getChildren(selected.id)
+
+    if (children.length > 0) {
+      await supabase
+        .from('whatsapp_expense_sessions')
+        .update({
+          selected_category_id: selected.id,
+          current_step: 'subcategory',
+        })
+        .eq('id', session.id)
+
+      const send = await sendMessage(
+        'Choose subcategory:\n' +
+          children.map((c, i) => `${i}. ${c.name}`).join('\n')
+      )
+
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Asked nested subcategory',
+        sent: send,
+      })
+    }
+
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        selected_category_id: selected.id,
+        current_step: 'description',
+      })
+      .eq('id', session.id)
+
+    const send = await sendMessage('Description?')
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -354,7 +371,6 @@ export async function GET() {
         .eq('id', session.id)
 
       const send = await sendMessage('Expense saved ✅')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -373,7 +389,6 @@ export async function GET() {
         .eq('id', session.id)
 
       const send = await sendMessage('Expense canceled.')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -384,7 +399,6 @@ export async function GET() {
     }
 
     const send = await sendMessage('Please reply YES to save or NO to cancel.')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
