@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 function parseAmount(text: string) {
-  const cleaned = text.replace(/usd/gi, '').replace(/\$/g, '').trim()
+  const cleaned = text
+    .replace(/usd/gi, '')
+    .replace(/\$/g, '')
+    .trim()
+
   const amount = Number(cleaned)
 
   return Number.isFinite(amount) ? amount : null
@@ -22,6 +26,9 @@ export async function POST(request: Request) {
     body.phone ||
     'unknown'
 
+  const normalizedText =
+    messageText.trim().toLowerCase()
+
   const { data: existingSession } = await supabase
     .from('whatsapp_expense_sessions')
     .select('*')
@@ -29,11 +36,21 @@ export async function POST(request: Request) {
     .eq('is_completed', false)
     .maybeSingle()
 
+  // START FLOW
   if (!existingSession) {
-    await supabase.from('whatsapp_expense_sessions').insert({
-      phone_number: senderPhone,
-      current_step: 'amount',
-    })
+    if (normalizedText !== 'expense') {
+      return NextResponse.json({
+        success: true,
+        reply: 'Send EXPENSE to register a new expense.',
+      })
+    }
+
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .insert({
+        phone_number: senderPhone,
+        current_step: 'amount',
+      })
 
     return NextResponse.json({
       success: true,
@@ -41,13 +58,15 @@ export async function POST(request: Request) {
     })
   }
 
+  // AMOUNT STEP
   if (existingSession.current_step === 'amount') {
     const amount = parseAmount(messageText)
 
     if (!amount) {
       return NextResponse.json({
         success: true,
-        reply: 'Please send a valid amount. Example: USD 150',
+        reply:
+          'Please send a valid amount. Example: USD 150',
       })
     }
 
@@ -56,41 +75,41 @@ export async function POST(request: Request) {
       .update({
         amount,
         current_step: 'main_category',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', existingSession.id)
 
     const { data: categories } = await supabase
       .from('categories')
-      .select('id, name, code')
+      .select('id, name')
       .eq('type', 'expense')
       .is('parent_id', null)
-      .order('code')
 
     return NextResponse.json({
       success: true,
       reply:
         'Choose main category:\n' +
-        categories?.map((c, i) => `${i + 1}. ${c.name}`).join('\n'),
+        categories
+          ?.map((c, i) => `${i + 1}. ${c.name}`)
+          .join('\n'),
     })
   }
 
+  // MAIN CATEGORY STEP
   if (existingSession.current_step === 'main_category') {
     const choice = Number(messageText)
 
     const { data: categories } = await supabase
       .from('categories')
-      .select('id, name, code')
+      .select('id, name')
       .eq('type', 'expense')
       .is('parent_id', null)
-      .order('code')
 
     const selected = categories?.[choice - 1]
 
     if (!selected) {
       return NextResponse.json({
         success: true,
-        reply: 'Invalid option. Please choose a number from the list.',
+        reply: 'Invalid option.',
       })
     }
 
@@ -99,46 +118,42 @@ export async function POST(request: Request) {
       .update({
         selected_category_id: selected.id,
         current_step: 'subcategory',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', existingSession.id)
 
     const { data: subcategories } = await supabase
       .from('categories')
-      .select('id, name, code')
+      .select('id, name')
       .eq('parent_id', selected.id)
-      .order('code')
-
-    if (!subcategories || subcategories.length === 0) {
-      return NextResponse.json({
-        success: true,
-        reply: 'Description?',
-      })
-    }
 
     return NextResponse.json({
       success: true,
       reply:
         'Choose subcategory:\n' +
-        subcategories.map((c, i) => `${i + 1}. ${c.name}`).join('\n'),
+        subcategories
+          ?.map((c, i) => `${i + 1}. ${c.name}`)
+          .join('\n'),
     })
   }
 
+  // SUBCATEGORY STEP
   if (existingSession.current_step === 'subcategory') {
     const choice = Number(messageText)
 
     const { data: subcategories } = await supabase
       .from('categories')
-      .select('id, name, code')
-      .eq('parent_id', existingSession.selected_category_id)
-      .order('code')
+      .select('id, name')
+      .eq(
+        'parent_id',
+        existingSession.selected_category_id
+      )
 
     const selected = subcategories?.[choice - 1]
 
     if (!selected) {
       return NextResponse.json({
         success: true,
-        reply: 'Invalid option. Please choose a number from the list.',
+        reply: 'Invalid option.',
       })
     }
 
@@ -147,7 +162,6 @@ export async function POST(request: Request) {
       .update({
         selected_category_id: selected.id,
         current_step: 'description',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', existingSession.id)
 
@@ -157,83 +171,64 @@ export async function POST(request: Request) {
     })
   }
 
+  // DESCRIPTION STEP
   if (existingSession.current_step === 'description') {
     await supabase
       .from('whatsapp_expense_sessions')
       .update({
         description: messageText,
         current_step: 'confirm',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', existingSession.id)
-
-    const { data: category } = await supabase
-      .from('categories')
-      .select('name')
-      .eq('id', existingSession.selected_category_id)
-      .single()
 
     return NextResponse.json({
       success: true,
       reply:
-        `Confirm expense:\n` +
+        `Confirm expense:\n\n` +
         `Amount: USD ${existingSession.amount}\n` +
-        `Category: ${category?.name}\n` +
         `Description: ${messageText}\n\n` +
-        `Reply YES to save or NO to cancel.`,
+        `Reply YES to save.`,
     })
   }
 
+  // CONFIRM STEP
   if (existingSession.current_step === 'confirm') {
-    const answer = messageText.toLowerCase()
+    if (normalizedText !== 'yes') {
+      return NextResponse.json({
+        success: true,
+        reply: 'Reply YES to confirm.',
+      })
+    }
 
-    if (answer === 'yes') {
-      await supabase.from('transactions').insert({
+    await supabase
+      .from('transactions')
+      .insert({
         type: 'expense',
         amount: existingSession.amount,
         description: existingSession.description,
-        category_id: existingSession.selected_category_id,
+        category_id:
+          existingSession.selected_category_id,
         source: 'whatsapp',
-        transaction_date: new Date().toISOString().slice(0, 10),
+        transaction_date: new Date()
+          .toISOString()
+          .slice(0, 10),
       })
 
-      await supabase
-        .from('whatsapp_expense_sessions')
-        .update({
-          is_completed: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingSession.id)
-
-      return NextResponse.json({
-        success: true,
-        reply: 'Expense saved ✅',
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        is_completed: true,
       })
-    }
-
-    if (answer === 'no') {
-      await supabase
-        .from('whatsapp_expense_sessions')
-        .update({
-          is_completed: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingSession.id)
-
-      return NextResponse.json({
-        success: true,
-        reply: 'Expense canceled.',
-      })
-    }
+      .eq('id', existingSession.id)
 
     return NextResponse.json({
       success: true,
-      reply: 'Please reply YES to save or NO to cancel.',
+      reply: 'Expense saved ✅',
     })
   }
 
   return NextResponse.json({
     success: true,
-    reply: 'Amount?',
+    reply: 'Send EXPENSE to begin.',
   })
 }
