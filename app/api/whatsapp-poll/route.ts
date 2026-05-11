@@ -44,27 +44,29 @@ export async function GET() {
     })
   }
 
-  const latestMessage = [...messages].reverse().find((message: any) => {
-    const body = String(message.body || '').trim()
+  const latestMessage = [...messages]
+    .reverse()
+    .find((message: any) => {
+      const body = String(message.body || '').trim()
 
-    const ignoredMessages = [
-      'Amount?',
-      'Please send a valid amount. Example: USD 150',
-      'Choose main category:',
-      'Choose subcategory:',
-      'Description?',
-      'Confirm expense:',
-      'Expense saved',
-      'Expense canceled.',
-      'Please reply YES to save or NO to cancel.',
-      'Invalid option. Please choose a number from the list.',
-    ]
+      const ignoredMessages = [
+        'Amount?',
+        'Please send a valid amount. Example: USD 150',
+        'Choose main category:',
+        'Choose subcategory:',
+        'Description?',
+        'Confirm expense:',
+        'Expense saved',
+        'Expense canceled.',
+        'Please reply YES to save or NO to cancel.',
+        'Invalid option. Please choose a number from the list.',
+      ]
 
-    return (
-      body &&
-      !ignoredMessages.some(text => body.startsWith(text))
-    )
-  })
+      return (
+        body &&
+        !ignoredMessages.some(text => body.startsWith(text))
+      )
+    })
 
   if (!latestMessage) {
     return NextResponse.json({
@@ -109,6 +111,14 @@ export async function GET() {
 
   if (session.current_step === 'amount') {
     const amount = parseAmount(text)
+
+    if (normalizedText === 'expense') {
+      return NextResponse.json({
+        success: true,
+        message: 'Waiting for new amount message',
+        body: text,
+      })
+    }
 
     if (!amount) {
       return NextResponse.json({
