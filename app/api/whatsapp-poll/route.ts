@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase'
 const INSTANCE_ID = 'instance174454'
 const TOKEN = 'tcp7wqrfc5koodt3'
 const GROUP_ID = '120363425950692194@g.us'
-const POLLING_ID = 'gz28us-expenses'
 
 async function sendMessage(text: string) {
   await fetch(`https://api.ultramsg.com/${INSTANCE_ID}/messages/chat`, {
@@ -18,16 +17,6 @@ async function sendMessage(text: string) {
       body: text,
     }),
   })
-}
-
-async function markProcessed(messageId: string) {
-  await supabase
-    .from('whatsapp_polling_state')
-    .update({
-      last_message_id: messageId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', POLLING_ID)
 }
 
 function parseAmount(text: string) {
@@ -55,29 +44,27 @@ export async function GET() {
     })
   }
 
-  const latestMessage = [...messages]
-    .reverse()
-    .find((message: any) => {
-      const body = String(message.body || '').trim()
+  const latestMessage = messages.find((message: any) => {
+    const body = String(message.body || '').trim()
 
-      const ignoredMessages = [
-        'Amount?',
-        'Please send a valid amount. Example: USD 150',
-        'Choose main category:',
-        'Choose subcategory:',
-        'Description?',
-        'Confirm expense:',
-        'Expense saved',
-        'Expense canceled.',
-        'Please reply YES to save or NO to cancel.',
-        'Invalid option. Please choose a number from the list.',
-      ]
+    const ignoredMessages = [
+      'Amount?',
+      'Please send a valid amount. Example: USD 150',
+      'Choose main category:',
+      'Choose subcategory:',
+      'Description?',
+      'Confirm expense:',
+      'Expense saved',
+      'Expense canceled.',
+      'Please reply YES to save or NO to cancel.',
+      'Invalid option. Please choose a number from the list.',
+    ]
 
-      return (
-        body &&
-        !ignoredMessages.some(text => body.startsWith(text))
-      )
-    })
+    return (
+      body &&
+      !ignoredMessages.some(text => body.startsWith(text))
+    )
+  })
 
   if (!latestMessage) {
     return NextResponse.json({
@@ -86,22 +73,8 @@ export async function GET() {
     })
   }
 
-  const messageId = latestMessage.id
   const text = latestMessage.body?.trim() || ''
   const normalizedText = text.toLowerCase()
-
-  const { data: state } = await supabase
-    .from('whatsapp_polling_state')
-    .select('*')
-    .eq('id', POLLING_ID)
-    .single()
-
-  if (state?.last_message_id === messageId) {
-    return NextResponse.json({
-      success: true,
-      message: 'Already processed',
-    })
-  }
 
   const { data: session } = await supabase
     .from('whatsapp_expense_sessions')
@@ -110,11 +83,8 @@ export async function GET() {
     .eq('is_completed', false)
     .maybeSingle()
 
-  // START FLOW
   if (!session) {
     if (normalizedText !== 'expense') {
-      await markProcessed(messageId)
-
       return NextResponse.json({
         success: true,
         message: 'Message ignored',
@@ -130,7 +100,6 @@ export async function GET() {
       })
 
     await sendMessage('Amount?')
-    await markProcessed(messageId)
 
     return NextResponse.json({
       success: true,
@@ -138,20 +107,14 @@ export async function GET() {
     })
   }
 
-  // AMOUNT
   if (session.current_step === 'amount') {
     const amount = parseAmount(text)
 
     if (!amount) {
-      await sendMessage(
-        'Please send a valid amount. Example: USD 150'
-      )
-
-      await markProcessed(messageId)
-
       return NextResponse.json({
         success: true,
-        message: 'Invalid amount',
+        message: 'Waiting for amount',
+        body: text,
       })
     }
 
@@ -177,15 +140,12 @@ export async function GET() {
           .join('\n')
     )
 
-    await markProcessed(messageId)
-
     return NextResponse.json({
       success: true,
       message: 'Asked category',
     })
   }
 
-  // MAIN CATEGORY
   if (session.current_step === 'main_category') {
     const choice = Number(text)
 
@@ -199,15 +159,10 @@ export async function GET() {
     const selected = categories?.[choice - 1]
 
     if (!selected) {
-      await sendMessage(
-        'Invalid option. Please choose a number from the list.'
-      )
-
-      await markProcessed(messageId)
-
       return NextResponse.json({
         success: true,
-        message: 'Invalid main category',
+        message: 'Waiting for valid main category',
+        body: text,
       })
     }
 
@@ -234,7 +189,6 @@ export async function GET() {
         .eq('id', session.id)
 
       await sendMessage('Description?')
-      await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
@@ -249,15 +203,12 @@ export async function GET() {
           .join('\n')
     )
 
-    await markProcessed(messageId)
-
     return NextResponse.json({
       success: true,
       message: 'Asked subcategory',
     })
   }
 
-  // SUBCATEGORY
   if (session.current_step === 'subcategory') {
     const choice = Number(text)
 
@@ -270,15 +221,10 @@ export async function GET() {
     const selected = subcategories?.[choice - 1]
 
     if (!selected) {
-      await sendMessage(
-        'Invalid option. Please choose a number from the list.'
-      )
-
-      await markProcessed(messageId)
-
       return NextResponse.json({
         success: true,
-        message: 'Invalid subcategory',
+        message: 'Waiting for valid subcategory',
+        body: text,
       })
     }
 
@@ -291,7 +237,6 @@ export async function GET() {
       .eq('id', session.id)
 
     await sendMessage('Description?')
-    await markProcessed(messageId)
 
     return NextResponse.json({
       success: true,
@@ -299,7 +244,6 @@ export async function GET() {
     })
   }
 
-  // DESCRIPTION
   if (session.current_step === 'description') {
     await supabase
       .from('whatsapp_expense_sessions')
@@ -323,15 +267,12 @@ export async function GET() {
         `Reply YES to save or NO to cancel.`
     )
 
-    await markProcessed(messageId)
-
     return NextResponse.json({
       success: true,
       message: 'Asked confirmation',
     })
   }
 
-  // CONFIRM
   if (session.current_step === 'confirm') {
     if (normalizedText === 'yes') {
       await supabase
@@ -355,7 +296,6 @@ export async function GET() {
         .eq('id', session.id)
 
       await sendMessage('Expense saved ✅')
-      await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
@@ -372,7 +312,6 @@ export async function GET() {
         .eq('id', session.id)
 
       await sendMessage('Expense canceled.')
-      await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
@@ -380,19 +319,12 @@ export async function GET() {
       })
     }
 
-    await sendMessage(
-      'Please reply YES to save or NO to cancel.'
-    )
-
-    await markProcessed(messageId)
-
     return NextResponse.json({
       success: true,
       message: 'Waiting confirmation',
+      body: text,
     })
   }
-
-  await markProcessed(messageId)
 
   return NextResponse.json({
     success: true,
