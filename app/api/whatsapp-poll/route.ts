@@ -35,9 +35,7 @@ export async function GET() {
     return NextResponse.json({ success: true, message: 'No messages found' })
   }
 
-  const latestMessage = [...messages]
-  .reverse()
-  .find((message: any) => {
+  const latestMessage = messages.find((message: any) => {
     const body = String(message.body || '').trim()
 
     const ignoredMessages = [
