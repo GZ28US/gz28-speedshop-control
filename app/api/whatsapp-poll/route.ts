@@ -44,7 +44,7 @@ export async function GET() {
     })
   }
 
-  const latestMessage = messages.find((message: any) => {
+  const latestMessage = [...messages].reverse().find((message: any) => {
     const body = String(message.body || '').trim()
 
     const ignoredMessages = [
