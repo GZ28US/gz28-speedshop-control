@@ -32,7 +32,10 @@ export async function GET() {
   const messages = await response.json()
 
   if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({ success: true, message: 'No messages found' })
+    return NextResponse.json({
+      success: true,
+      message: 'No messages found',
+    })
   }
 
   const latestMessage = messages.find((message: any) => {
@@ -46,7 +49,8 @@ export async function GET() {
       'Description?',
       'Confirm expense:',
       'Expense saved',
-      'Expense canceled',
+      'Expense canceled.',
+      'Please reply YES to save or NO to cancel.',
     ]
 
     return (
@@ -54,6 +58,14 @@ export async function GET() {
       !ignoredMessages.some(text => body.startsWith(text))
     )
   })
+
+  if (!latestMessage) {
+    return NextResponse.json({
+      success: true,
+      message: 'No valid user messages found',
+    })
+  }
+
   const messageId = latestMessage.id
   const text = latestMessage.body?.trim() || ''
   const normalizedText = text.toLowerCase()
@@ -65,12 +77,18 @@ export async function GET() {
     .single()
 
   if (state?.last_message_id === messageId) {
-    return NextResponse.json({ success: true, message: 'No new messages' })
+    return NextResponse.json({
+      success: true,
+      message: 'No new messages',
+    })
   }
 
   await supabase
     .from('whatsapp_polling_state')
-    .update({ last_message_id: messageId, updated_at: new Date().toISOString() })
+    .update({
+      last_message_id: messageId,
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', POLLING_ID)
 
   const { data: session } = await supabase
@@ -80,9 +98,14 @@ export async function GET() {
     .eq('is_completed', false)
     .maybeSingle()
 
+  // START FLOW
   if (!session) {
     if (normalizedText !== 'expense') {
-      return NextResponse.json({ success: true, message: 'Message ignored', body: text })
+      return NextResponse.json({
+        success: true,
+        message: 'Message ignored',
+        body: text,
+      })
     }
 
     await supabase.from('whatsapp_expense_sessions').insert({
@@ -91,20 +114,34 @@ export async function GET() {
     })
 
     await sendMessage('Amount?')
-    return NextResponse.json({ success: true, message: 'Started expense flow' })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Started expense flow',
+    })
   }
 
+  // AMOUNT
   if (session.current_step === 'amount') {
     const amount = parseAmount(text)
 
     if (!amount) {
-      await sendMessage('Please send a valid amount. Example: USD 150')
-      return NextResponse.json({ success: true, message: 'Invalid amount' })
+      await sendMessage(
+        'Please send a valid amount. Example: USD 150'
+      )
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid amount',
+      })
     }
 
     await supabase
       .from('whatsapp_expense_sessions')
-      .update({ amount, current_step: 'main_category' })
+      .update({
+        amount,
+        current_step: 'main_category',
+      })
       .eq('id', session.id)
 
     const { data: categories } = await supabase
@@ -119,9 +156,13 @@ export async function GET() {
         categories?.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
     )
 
-    return NextResponse.json({ success: true, message: 'Asked category' })
+    return NextResponse.json({
+      success: true,
+      message: 'Asked category',
+    })
   }
 
+  // MAIN CATEGORY
   if (session.current_step === 'main_category') {
     const choice = Number(text)
 
@@ -135,8 +176,14 @@ export async function GET() {
     const selected = categories?.[choice - 1]
 
     if (!selected) {
-      await sendMessage('Invalid option. Please choose a number from the list.')
-      return NextResponse.json({ success: true, message: 'Invalid main category' })
+      await sendMessage(
+        'Invalid option. Please choose a number from the list.'
+      )
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid main category',
+      })
     }
 
     await supabase
@@ -156,11 +203,17 @@ export async function GET() {
     if (!subcategories || subcategories.length === 0) {
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({ current_step: 'description' })
+        .update({
+          current_step: 'description',
+        })
         .eq('id', session.id)
 
       await sendMessage('Description?')
-      return NextResponse.json({ success: true, message: 'Asked description' })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Asked description',
+      })
     }
 
     await sendMessage(
@@ -168,9 +221,13 @@ export async function GET() {
         subcategories.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
     )
 
-    return NextResponse.json({ success: true, message: 'Asked subcategory' })
+    return NextResponse.json({
+      success: true,
+      message: 'Asked subcategory',
+    })
   }
 
+  // SUBCATEGORY
   if (session.current_step === 'subcategory') {
     const choice = Number(text)
 
@@ -183,8 +240,14 @@ export async function GET() {
     const selected = subcategories?.[choice - 1]
 
     if (!selected) {
-      await sendMessage('Invalid option. Please choose a number from the list.')
-      return NextResponse.json({ success: true, message: 'Invalid subcategory' })
+      await sendMessage(
+        'Invalid option. Please choose a number from the list.'
+      )
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid subcategory',
+      })
     }
 
     await supabase
@@ -196,9 +259,14 @@ export async function GET() {
       .eq('id', session.id)
 
     await sendMessage('Description?')
-    return NextResponse.json({ success: true, message: 'Asked description' })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked description',
+    })
   }
 
+  // DESCRIPTION
   if (session.current_step === 'description') {
     await supabase
       .from('whatsapp_expense_sessions')
@@ -222,9 +290,13 @@ export async function GET() {
         `Reply YES to save or NO to cancel.`
     )
 
-    return NextResponse.json({ success: true, message: 'Asked confirmation' })
+    return NextResponse.json({
+      success: true,
+      message: 'Asked confirmation',
+    })
   }
 
+  // CONFIRM
   if (session.current_step === 'confirm') {
     if (normalizedText === 'yes') {
       await supabase.from('transactions').insert({
@@ -233,31 +305,54 @@ export async function GET() {
         description: session.description,
         category_id: session.selected_category_id,
         source: 'whatsapp-group-polling',
-        transaction_date: new Date().toISOString().slice(0, 10),
+        transaction_date: new Date()
+          .toISOString()
+          .slice(0, 10),
       })
 
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({ is_completed: true })
+        .update({
+          is_completed: true,
+        })
         .eq('id', session.id)
 
       await sendMessage('Expense saved ✅')
-      return NextResponse.json({ success: true, message: 'Expense saved' })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Expense saved',
+      })
     }
 
     if (normalizedText === 'no') {
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({ is_completed: true })
+        .update({
+          is_completed: true,
+        })
         .eq('id', session.id)
 
       await sendMessage('Expense canceled.')
-      return NextResponse.json({ success: true, message: 'Expense canceled' })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Expense canceled',
+      })
     }
 
-    await sendMessage('Please reply YES to save or NO to cancel.')
-    return NextResponse.json({ success: true, message: 'Waiting confirmation' })
+    await sendMessage(
+      'Please reply YES to save or NO to cancel.'
+    )
+
+    return NextResponse.json({
+      success: true,
+      message: 'Waiting confirmation',
+    })
   }
 
-  return NextResponse.json({ success: true, message: 'No action' })
+  return NextResponse.json({
+    success: true,
+    message: 'No action',
+  })
 }
