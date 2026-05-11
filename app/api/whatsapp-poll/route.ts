@@ -35,7 +35,12 @@ export async function GET() {
     return NextResponse.json({ success: true, message: 'No messages found' })
   }
 
-  const latestMessage = messages[0]
+  const latestMessage = messages.find(
+  (message: any) =>
+    message.from === GROUP_ID &&
+    message.body &&
+    !message.fromMe
+)
   const messageId = latestMessage.id
   const text = latestMessage.body?.trim() || ''
   const normalizedText = text.toLowerCase()
