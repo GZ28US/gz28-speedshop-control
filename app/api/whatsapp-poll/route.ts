@@ -225,7 +225,7 @@ export async function GET() {
       .from('categories')
       .select('id, name, code')
       .eq('parent_id', selected.id)
-      .order('code')
+      .order('name')
 
     if (!subcategories || subcategories.length === 0) {
       await supabase
@@ -267,7 +267,7 @@ export async function GET() {
       .from('categories')
       .select('id, name, code')
       .eq('parent_id', session.selected_category_id)
-      .order('code')
+      .order('name')
 
     const selected = subcategories?.[choice]
 
