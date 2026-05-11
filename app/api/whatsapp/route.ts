@@ -20,9 +20,15 @@ async function sendWhatsAppMessage(body: string) {
 }
 
 function parseAmount(text: string) {
-  const cleaned = text.replace(/usd/gi, '').replace(/\$/g, '').trim()
+  const cleaned = text
+    .replace(/usd/gi, '')
+    .replace(/\$/g, '')
+    .replace(/,/g, '')
+    .trim()
+
   const amount = Number(cleaned)
-  return Number.isFinite(amount) ? amount : null
+
+  return Number.isFinite(amount) && amount > 0 ? amount : null
 }
 
 export async function POST(request: Request) {
@@ -65,6 +71,7 @@ export async function POST(request: Request) {
     })
 
     await sendWhatsAppMessage('Amount?')
+
     return NextResponse.json({ success: true })
   }
 
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
 
     await sendWhatsAppMessage(
       'Choose main category:\n' +
-        categories?.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
+        categories?.map((c, i) => `${i}. ${c.name}`).join('\n')
     )
 
     return NextResponse.json({ success: true })
@@ -109,7 +116,7 @@ export async function POST(request: Request) {
       .is('parent_id', null)
       .order('code')
 
-    const selected = categories?.[choice - 1]
+    const selected = categories?.[choice]
 
     if (!selected) {
       await sendWhatsAppMessage('Invalid option. Please choose a number from the list.')
@@ -128,7 +135,7 @@ export async function POST(request: Request) {
       .from('categories')
       .select('id, name, code')
       .eq('parent_id', selected.id)
-      .order('code')
+      .order('name')
 
     if (!subcategories || subcategories.length === 0) {
       await supabase
@@ -139,12 +146,13 @@ export async function POST(request: Request) {
         .eq('id', existingSession.id)
 
       await sendWhatsAppMessage('Description?')
+
       return NextResponse.json({ success: true })
     }
 
     await sendWhatsAppMessage(
       'Choose subcategory:\n' +
-        subcategories.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
+        subcategories.map((c, i) => `${i}. ${c.name}`).join('\n')
     )
 
     return NextResponse.json({ success: true })
@@ -157,9 +165,9 @@ export async function POST(request: Request) {
       .from('categories')
       .select('id, name, code')
       .eq('parent_id', existingSession.selected_category_id)
-      .order('code')
+      .order('name')
 
-    const selected = subcategories?.[choice - 1]
+    const selected = subcategories?.[choice]
 
     if (!selected) {
       await sendWhatsAppMessage('Invalid option. Please choose a number from the list.')
@@ -175,6 +183,7 @@ export async function POST(request: Request) {
       .eq('id', existingSession.id)
 
     await sendWhatsAppMessage('Description?')
+
     return NextResponse.json({ success: true })
   }
 
@@ -223,6 +232,7 @@ export async function POST(request: Request) {
         .eq('id', existingSession.id)
 
       await sendWhatsAppMessage('Expense saved ✅')
+
       return NextResponse.json({ success: true })
     }
 
@@ -235,10 +245,12 @@ export async function POST(request: Request) {
         .eq('id', existingSession.id)
 
       await sendWhatsAppMessage('Expense canceled.')
+
       return NextResponse.json({ success: true })
     }
 
     await sendWhatsAppMessage('Please reply YES to save or NO to cancel.')
+
     return NextResponse.json({ success: true })
   }
 
