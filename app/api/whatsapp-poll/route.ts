@@ -4,14 +4,11 @@ import { supabase } from '@/lib/supabase'
 const INSTANCE_ID = 'instance174454'
 const TOKEN = 'tcp7wqrfc5koodt3'
 const GROUP_ID = '120363425950692194@g.us'
-const POLLING_ID = 'gz28us-expenses'
 
 async function sendMessage(text: string) {
   const response = await fetch(`https://api.ultramsg.com/${INSTANCE_ID}/messages/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       token: TOKEN,
       to: GROUP_ID,
@@ -21,24 +18,19 @@ async function sendMessage(text: string) {
 
   const result = await response.text()
   console.log('UltraMsg send response:', result)
-
   return result
 }
 
 function parseAmount(text: string) {
-  const cleaned = text
-    .replace(/usd/gi, '')
-    .replace(/\$/g, '')
-    .replace(/,/g, '')
-    .trim()
-
-  const amount = Number(cleaned)
+  const amount = Number(
+    text.replace(/usd/gi, '').replace(/\$/g, '').replace(/,/g, '').trim()
+  )
 
   return Number.isFinite(amount) && amount > 0 ? amount : null
 }
 
 function isBotMessage(body: string) {
-  const ignoredMessages = [
+  return [
     'Amount?',
     'Please send a valid amount. Example: USD 150',
     'Choose main category:',
@@ -49,40 +41,35 @@ function isBotMessage(body: string) {
     'Expense canceled.',
     'Please reply YES to save or NO to cancel.',
     'Invalid option. Please choose a number from the list.',
-  ]
-
-  return ignoredMessages.some(text => body.startsWith(text))
+  ].some((text) => body.startsWith(text))
 }
 
-async function getPollingState() {
+function messageTime(message: any, fallback: number) {
+  const raw =
+    message.timestamp ??
+    message.time ??
+    message.created_at ??
+    message.date ??
+    fallback
+
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+async function wasProcessed(messageId: string) {
   const { data } = await supabase
-    .from('whatsapp_polling_state')
-    .select('*')
-    .eq('id', POLLING_ID)
+    .from('whatsapp_processed_messages')
+    .select('message_id')
+    .eq('message_id', messageId)
     .maybeSingle()
 
-  if (data) return data
-
-  const { data: inserted } = await supabase
-    .from('whatsapp_polling_state')
-    .insert({
-      id: POLLING_ID,
-      last_message_id: null,
-    })
-    .select('*')
-    .single()
-
-  return inserted
+  return Boolean(data)
 }
 
 async function markProcessed(messageId: string) {
   await supabase
-    .from('whatsapp_polling_state')
-    .update({
-      last_message_id: messageId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', POLLING_ID)
+    .from('whatsapp_processed_messages')
+    .upsert({ message_id: messageId })
 }
 
 export async function GET() {
@@ -93,48 +80,29 @@ export async function GET() {
   const messages = await response.json()
 
   if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({
-      success: true,
-      message: 'No messages found',
-    })
+    return NextResponse.json({ success: true, message: 'No messages found' })
   }
 
-  const userMessages = [...messages]
-    .reverse()
+  const userMessages = messages
+    .map((message: any, index: number) => ({ ...message, __index: index }))
     .filter((message: any) => {
       const body = String(message.body || '').trim()
       return body && !isBotMessage(body)
     })
+    .sort((a: any, b: any) => messageTime(a, a.__index) - messageTime(b, b.__index))
 
-  if (userMessages.length === 0) {
-    return NextResponse.json({
-      success: true,
-      message: 'No valid user messages found',
-    })
-  }
-
-  const state = await getPollingState()
-  const lastMessageId = state?.last_message_id
-
-  let nextMessage: any | undefined
-
-  if (!lastMessageId) {
-    nextMessage = userMessages[userMessages.length - 1]
-  } else {
-    const lastIndex = userMessages.findIndex((message: any) => message.id === lastMessageId)
-
-    if (lastIndex === -1) {
-      nextMessage = userMessages[userMessages.length - 1]
-    } else {
-      nextMessage = userMessages[lastIndex + 1]
+  const nextMessage = await (async () => {
+    for (const message of userMessages) {
+      if (!message.id) continue
+      const processed = await wasProcessed(message.id)
+      if (!processed) return message
     }
-  }
+
+    return null
+  })()
 
   if (!nextMessage) {
-    return NextResponse.json({
-      success: true,
-      message: 'No new messages',
-    })
+    return NextResponse.json({ success: true, message: 'No new messages' })
   }
 
   const messageId = nextMessage.id
@@ -151,34 +119,23 @@ export async function GET() {
   if (!session) {
     if (normalizedText !== 'expense') {
       await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Message ignored',
-        body: text,
-      })
+      return NextResponse.json({ success: true, message: 'Message ignored', body: text })
     }
 
-    await supabase
-      .from('whatsapp_expense_sessions')
-      .insert({
-        phone_number: GROUP_ID,
-        current_step: 'amount',
-      })
+    await supabase.from('whatsapp_expense_sessions').insert({
+      phone_number: GROUP_ID,
+      current_step: 'amount',
+    })
 
     await sendMessage('Amount?')
     await markProcessed(messageId)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Started expense flow',
-    })
+    return NextResponse.json({ success: true, message: 'Started expense flow' })
   }
 
   if (session.current_step === 'amount') {
     if (normalizedText === 'expense') {
       await markProcessed(messageId)
-
       return NextResponse.json({
         success: true,
         message: 'Ignored duplicate EXPENSE trigger while waiting for amount',
@@ -190,20 +147,12 @@ export async function GET() {
     if (!amount) {
       await sendMessage('Please send a valid amount. Example: USD 150')
       await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Invalid amount',
-        body: text,
-      })
+      return NextResponse.json({ success: true, message: 'Invalid amount', body: text })
     }
 
     await supabase
       .from('whatsapp_expense_sessions')
-      .update({
-        amount,
-        current_step: 'main_category',
-      })
+      .update({ amount, current_step: 'main_category' })
       .eq('id', session.id)
 
     const { data: categories } = await supabase
@@ -215,17 +164,11 @@ export async function GET() {
 
     await sendMessage(
       'Choose main category:\n' +
-        categories
-          ?.map((c, i) => `${i + 1}. ${c.name}`)
-          .join('\n')
+        categories?.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
     )
 
     await markProcessed(messageId)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Asked category',
-    })
+    return NextResponse.json({ success: true, message: 'Asked category' })
   }
 
   if (session.current_step === 'main_category') {
@@ -243,12 +186,7 @@ export async function GET() {
     if (!selected) {
       await sendMessage('Invalid option. Please choose a number from the list.')
       await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Invalid main category',
-        body: text,
-      })
+      return NextResponse.json({ success: true, message: 'Invalid main category', body: text })
     }
 
     await supabase
@@ -268,33 +206,22 @@ export async function GET() {
     if (!subcategories || subcategories.length === 0) {
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({
-          current_step: 'description',
-        })
+        .update({ current_step: 'description' })
         .eq('id', session.id)
 
       await sendMessage('Description?')
       await markProcessed(messageId)
 
-      return NextResponse.json({
-        success: true,
-        message: 'Asked description',
-      })
+      return NextResponse.json({ success: true, message: 'Asked description' })
     }
 
     await sendMessage(
       'Choose subcategory:\n' +
-        subcategories
-          .map((c, i) => `${i + 1}. ${c.name}`)
-          .join('\n')
+        subcategories.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
     )
 
     await markProcessed(messageId)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Asked subcategory',
-    })
+    return NextResponse.json({ success: true, message: 'Asked subcategory' })
   }
 
   if (session.current_step === 'subcategory') {
@@ -311,12 +238,7 @@ export async function GET() {
     if (!selected) {
       await sendMessage('Invalid option. Please choose a number from the list.')
       await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Invalid subcategory',
-        body: text,
-      })
+      return NextResponse.json({ success: true, message: 'Invalid subcategory', body: text })
     }
 
     await supabase
@@ -330,10 +252,7 @@ export async function GET() {
     await sendMessage('Description?')
     await markProcessed(messageId)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Asked description',
-    })
+    return NextResponse.json({ success: true, message: 'Asked description' })
   }
 
   if (session.current_step === 'description') {
@@ -360,75 +279,50 @@ export async function GET() {
     )
 
     await markProcessed(messageId)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Asked confirmation',
-    })
+    return NextResponse.json({ success: true, message: 'Asked confirmation' })
   }
 
   if (session.current_step === 'confirm') {
     if (normalizedText === 'yes') {
-      await supabase
-        .from('transactions')
-        .insert({
-          type: 'expense',
-          amount: session.amount,
-          description: session.description,
-          category_id: session.selected_category_id,
-          source: 'whatsapp-group-polling',
-          transaction_date: new Date()
-            .toISOString()
-            .slice(0, 10),
-        })
+      await supabase.from('transactions').insert({
+        type: 'expense',
+        amount: session.amount,
+        description: session.description,
+        category_id: session.selected_category_id,
+        source: 'whatsapp-group-polling',
+        transaction_date: new Date().toISOString().slice(0, 10),
+      })
 
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({
-          is_completed: true,
-        })
+        .update({ is_completed: true })
         .eq('id', session.id)
 
       await sendMessage('Expense saved ✅')
       await markProcessed(messageId)
 
-      return NextResponse.json({
-        success: true,
-        message: 'Expense saved',
-      })
+      return NextResponse.json({ success: true, message: 'Expense saved' })
     }
 
     if (normalizedText === 'no') {
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({
-          is_completed: true,
-        })
+        .update({ is_completed: true })
         .eq('id', session.id)
 
       await sendMessage('Expense canceled.')
       await markProcessed(messageId)
 
-      return NextResponse.json({
-        success: true,
-        message: 'Expense canceled',
-      })
+      return NextResponse.json({ success: true, message: 'Expense canceled' })
     }
 
     await sendMessage('Please reply YES to save or NO to cancel.')
     await markProcessed(messageId)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Waiting confirmation',
-      body: text,
-    })
+    return NextResponse.json({ success: true, message: 'Waiting confirmation', body: text })
   }
 
   await markProcessed(messageId)
 
-  return NextResponse.json({
-    success: true,
-    message: 'No action',
-  })
+  return NextResponse.json({ success: true, message: 'No action' })
 }
