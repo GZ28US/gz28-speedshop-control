@@ -165,7 +165,7 @@ export async function GET() {
 
     const send = await sendMessage(
       'Choose main category:\n' +
-        categories?.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
+        categories?.map((c, i) => `${i}. ${c.name}`).join('\n')
     )
 
     await markProcessed(messageId)
@@ -233,7 +233,7 @@ export async function GET() {
 
     const send = await sendMessage(
       'Choose subcategory:\n' +
-        subcategories.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
+        subcategories.map((c, i) => `${i}. ${c.name}`).join('\n')
     )
 
     await markProcessed(messageId)
