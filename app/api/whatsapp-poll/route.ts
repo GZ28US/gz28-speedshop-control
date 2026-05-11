@@ -44,18 +44,6 @@ function isBotMessage(body: string) {
   ].some((text) => body.startsWith(text))
 }
 
-function messageTime(message: any, fallback: number) {
-  const raw =
-    message.timestamp ??
-    message.time ??
-    message.created_at ??
-    message.date ??
-    fallback
-
-  const parsed = Number(raw)
-  return Number.isFinite(parsed) ? parsed : fallback
-}
-
 async function wasProcessed(messageId: string) {
   const { data } = await supabase
     .from('whatsapp_processed_messages')
@@ -83,23 +71,20 @@ export async function GET() {
     return NextResponse.json({ success: true, message: 'No messages found' })
   }
 
-  const userMessages = messages
-    .map((message: any, index: number) => ({ ...message, __index: index }))
-    .filter((message: any) => {
-      const body = String(message.body || '').trim()
-      return body && !isBotMessage(body)
-    })
-    .sort((a: any, b: any) => messageTime(a, a.__index) - messageTime(b, b.__index))
+  const userMessages = messages.filter((message: any) => {
+    const body = String(message.body || '').trim()
+    return message.id && body && !isBotMessage(body)
+  })
 
-  const nextMessage = await (async () => {
-    for (const message of userMessages) {
-      if (!message.id) continue
-      const processed = await wasProcessed(message.id)
-      if (!processed) return message
+  let nextMessage: any = null
+
+  for (const message of userMessages) {
+    const processed = await wasProcessed(message.id)
+    if (!processed) {
+      nextMessage = message
+      break
     }
-
-    return null
-  })()
+  }
 
   if (!nextMessage) {
     return NextResponse.json({ success: true, message: 'No new messages' })
