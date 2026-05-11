@@ -110,7 +110,12 @@ export async function GET() {
   if (!session) {
     if (normalizedText !== 'expense') {
       await markProcessed(messageId)
-      return NextResponse.json({ success: true, message: 'Message ignored', body: text })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Message ignored',
+        body: text,
+      })
     }
 
     await supabase.from('whatsapp_expense_sessions').insert({
@@ -119,6 +124,7 @@ export async function GET() {
     })
 
     const send = await sendMessage('Amount?')
+
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -131,6 +137,7 @@ export async function GET() {
   if (session.current_step === 'amount') {
     if (normalizedText === 'expense') {
       await markProcessed(messageId)
+
       return NextResponse.json({
         success: true,
         message: 'Ignored duplicate EXPENSE trigger while waiting for amount',
@@ -141,6 +148,7 @@ export async function GET() {
 
     if (!amount) {
       const send = await sendMessage('Please send a valid amount. Example: USD 150')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -153,7 +161,10 @@ export async function GET() {
 
     await supabase
       .from('whatsapp_expense_sessions')
-      .update({ amount, current_step: 'main_category' })
+      .update({
+        amount,
+        current_step: 'main_category',
+      })
       .eq('id', session.id)
 
     const { data: categories } = await supabase
@@ -187,10 +198,11 @@ export async function GET() {
       .is('parent_id', null)
       .order('code')
 
-    const selected = categories?.[choice - 1]
+    const selected = categories?.[choice]
 
     if (!selected) {
       const send = await sendMessage('Invalid option. Please choose a number from the list.')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -218,10 +230,13 @@ export async function GET() {
     if (!subcategories || subcategories.length === 0) {
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({ current_step: 'description' })
+        .update({
+          current_step: 'description',
+        })
         .eq('id', session.id)
 
       const send = await sendMessage('Description?')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -254,10 +269,11 @@ export async function GET() {
       .eq('parent_id', session.selected_category_id)
       .order('code')
 
-    const selected = subcategories?.[choice - 1]
+    const selected = subcategories?.[choice]
 
     if (!selected) {
       const send = await sendMessage('Invalid option. Please choose a number from the list.')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -277,6 +293,7 @@ export async function GET() {
       .eq('id', session.id)
 
     const send = await sendMessage('Description?')
+
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -331,10 +348,13 @@ export async function GET() {
 
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({ is_completed: true })
+        .update({
+          is_completed: true,
+        })
         .eq('id', session.id)
 
       const send = await sendMessage('Expense saved ✅')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -347,10 +367,13 @@ export async function GET() {
     if (normalizedText === 'no') {
       await supabase
         .from('whatsapp_expense_sessions')
-        .update({ is_completed: true })
+        .update({
+          is_completed: true,
+        })
         .eq('id', session.id)
 
       const send = await sendMessage('Expense canceled.')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -361,6 +384,7 @@ export async function GET() {
     }
 
     const send = await sendMessage('Please reply YES to save or NO to cancel.')
+
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -373,5 +397,8 @@ export async function GET() {
 
   await markProcessed(messageId)
 
-  return NextResponse.json({ success: true, message: 'No action' })
+  return NextResponse.json({
+    success: true,
+    message: 'No action',
+  })
 }
