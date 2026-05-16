@@ -33,9 +33,31 @@ function parseAmount(text: string) {
   return Number.isFinite(amount) && amount > 0 ? amount : null
 }
 
+function getReceiptFileUrl(message: any) {
+  const type = String(message?.type || '').toLowerCase()
+
+  const isReceiptFile =
+    type === 'image' ||
+    type === 'document' ||
+    type === 'pdf' ||
+    type === 'file'
+
+  if (!isReceiptFile) return null
+
+  return (
+    message.media ||
+    message.mediaUrl ||
+    message.url ||
+    message.document ||
+    message.file ||
+    null
+  )
+}
+
 function isBotMessage(body: string) {
   return [
     'Amount?',
+    'Receipt received',
     'Please send a valid amount. Example: USD 150',
     'Choose main category:',
     'Choose subcategory:',
@@ -88,7 +110,9 @@ export async function GET() {
   const userMessages = messages
     .filter((message: any) => {
       const body = String(message.body || '').trim()
-      return message.id && body && !isBotMessage(body)
+      const receiptFileUrl = getReceiptFileUrl(message)
+
+      return message.id && (receiptFileUrl || (body && !isBotMessage(body)))
     })
     .sort((a: any, b: any) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
 
@@ -109,6 +133,8 @@ export async function GET() {
   const messageId = nextMessage.id
   const text = String(nextMessage.body || '').trim()
   const normalizedText = text.toLowerCase()
+  const receiptFileUrl = getReceiptFileUrl(nextMessage)
+  const isReceiptTrigger = Boolean(receiptFileUrl)
 
   const { data: session } = await supabase
     .from('whatsapp_expense_sessions')
@@ -118,7 +144,7 @@ export async function GET() {
     .maybeSingle()
 
   if (!session) {
-    if (normalizedText !== 'expense') {
+    if (normalizedText !== 'expense' && !isReceiptTrigger) {
       await markProcessed(messageId)
       return NextResponse.json({ success: true, message: 'Message ignored', body: text })
     }
@@ -127,14 +153,42 @@ export async function GET() {
       phone_number: GROUP_ID,
       current_step: 'amount',
       selected_category_path: null,
+      receipt_file_url: receiptFileUrl,
     })
 
-    const send = await sendMessage('Amount?')
+    const send = await sendMessage(
+      isReceiptTrigger
+        ? 'Receipt received ✅\nAmount?'
+        : 'Amount?'
+    )
+
     await markProcessed(messageId)
 
     return NextResponse.json({
       success: true,
-      message: 'Started expense flow',
+      message: isReceiptTrigger
+        ? 'Started expense flow from receipt file'
+        : 'Started expense flow',
+      receipt_file_url: receiptFileUrl,
+      sent: send,
+    })
+  }
+
+  if (isReceiptTrigger) {
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        receipt_file_url: receiptFileUrl,
+      })
+      .eq('id', session.id)
+
+    const send = await sendMessage('Receipt attached ✅')
+    await markProcessed(messageId)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Receipt attached to current expense',
+      receipt_file_url: receiptFileUrl,
       sent: send,
     })
   }
@@ -329,11 +383,13 @@ export async function GET() {
       .single()
 
     const categoryText = session.selected_category_path || category?.name || 'Uncategorized'
+    const receiptLine = session.receipt_file_url ? `Receipt: Attached ✅\n` : ''
 
     const send = await sendMessage(
       `Confirm expense:\n` +
         `Amount: USD ${session.amount}\n` +
         `Category: ${categoryText}\n` +
+        receiptLine +
         `Description: ${text}\n\n` +
         `Reply YES to save or NO to cancel.`
     )
@@ -355,6 +411,7 @@ export async function GET() {
         description: session.description,
         category_id: session.selected_category_id,
         category_path: session.selected_category_path,
+        receipt_file_url: session.receipt_file_url,
         source: 'whatsapp-group-polling',
         transaction_date: new Date().toISOString().slice(0, 10),
       })
