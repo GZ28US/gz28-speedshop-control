@@ -126,6 +126,7 @@ export async function GET() {
     await supabase.from('whatsapp_expense_sessions').insert({
       phone_number: GROUP_ID,
       current_step: 'amount',
+      selected_category_path: null,
     })
 
     const send = await sendMessage('Amount?')
@@ -216,16 +217,18 @@ export async function GET() {
     }
 
     const children = await getChildren(selected.id)
+    const selectedPath = selected.name
+
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        selected_category_id: selected.id,
+        selected_category_path: selectedPath,
+        current_step: children.length > 0 ? 'subcategory' : 'description',
+      })
+      .eq('id', session.id)
 
     if (children.length > 0) {
-      await supabase
-        .from('whatsapp_expense_sessions')
-        .update({
-          selected_category_id: selected.id,
-          current_step: 'subcategory',
-        })
-        .eq('id', session.id)
-
       const send = await sendMessage(
         'Choose subcategory:\n' +
           children.map((c, i) => `${i}. ${c.name}`).join('\n')
@@ -239,14 +242,6 @@ export async function GET() {
         sent: send,
       })
     }
-
-    await supabase
-      .from('whatsapp_expense_sessions')
-      .update({
-        selected_category_id: selected.id,
-        current_step: 'description',
-      })
-      .eq('id', session.id)
 
     const send = await sendMessage('Description?')
     await markProcessed(messageId)
@@ -277,17 +272,23 @@ export async function GET() {
       })
     }
 
+    const previousPath = session.selected_category_path || ''
+    const selectedPath = previousPath
+      ? `${previousPath} > ${selected.name}`
+      : selected.name
+
     const children = await getChildren(selected.id)
 
-    if (children.length > 0) {
-      await supabase
-        .from('whatsapp_expense_sessions')
-        .update({
-          selected_category_id: selected.id,
-          current_step: 'subcategory',
-        })
-        .eq('id', session.id)
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        selected_category_id: selected.id,
+        selected_category_path: selectedPath,
+        current_step: children.length > 0 ? 'subcategory' : 'description',
+      })
+      .eq('id', session.id)
 
+    if (children.length > 0) {
       const send = await sendMessage(
         'Choose subcategory:\n' +
           children.map((c, i) => `${i}. ${c.name}`).join('\n')
@@ -301,14 +302,6 @@ export async function GET() {
         sent: send,
       })
     }
-
-    await supabase
-      .from('whatsapp_expense_sessions')
-      .update({
-        selected_category_id: selected.id,
-        current_step: 'description',
-      })
-      .eq('id', session.id)
 
     const send = await sendMessage('Description?')
     await markProcessed(messageId)
@@ -335,10 +328,12 @@ export async function GET() {
       .eq('id', session.selected_category_id)
       .single()
 
+    const categoryText = session.selected_category_path || category?.name || 'Uncategorized'
+
     const send = await sendMessage(
       `Confirm expense:\n` +
         `Amount: USD ${session.amount}\n` +
-        `Category: ${category?.name}\n` +
+        `Category: ${categoryText}\n` +
         `Description: ${text}\n\n` +
         `Reply YES to save or NO to cancel.`
     )
@@ -359,6 +354,7 @@ export async function GET() {
         amount: session.amount,
         description: session.description,
         category_id: session.selected_category_id,
+        category_path: session.selected_category_path,
         source: 'whatsapp-group-polling',
         transaction_date: new Date().toISOString().slice(0, 10),
       })
