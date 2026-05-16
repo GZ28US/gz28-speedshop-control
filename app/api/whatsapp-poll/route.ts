@@ -33,16 +33,19 @@ function parseAmount(text: string) {
   return Number.isFinite(amount) && amount > 0 ? amount : null
 }
 
-function getReceiptFileUrl(message: any) {
+function isReceiptMessage(message: any) {
   const type = String(message?.type || '').toLowerCase()
 
-  const isReceiptFile =
+  return (
     type === 'image' ||
     type === 'document' ||
     type === 'pdf' ||
     type === 'file'
+  )
+}
 
-  if (!isReceiptFile) return null
+function getReceiptFileUrl(message: any) {
+  if (!isReceiptMessage(message)) return null
 
   return (
     message.media ||
@@ -139,10 +142,8 @@ export async function GET() {
   const userMessages = messages
     .filter((message: any) => {
       const body = String(message.body || '').trim()
-      const receiptFileUrl = getReceiptFileUrl(message)
+      const isReceipt = isReceiptMessage(message)
 
-      // Ignore API bot messages only
-      // Allow user replies inside the WhatsApp group
       if (message.fromMe === true && !message.author) {
         return false
       }
@@ -150,7 +151,7 @@ export async function GET() {
       return (
         message.id &&
         (
-          receiptFileUrl ||
+          isReceipt ||
           (body && !isBotMessage(body))
         )
       )
@@ -179,7 +180,7 @@ export async function GET() {
   const text = String(nextMessage.body || '').trim()
   const normalizedText = text.toLowerCase()
   const receiptFileUrl = getReceiptFileUrl(nextMessage)
-  const isReceiptTrigger = Boolean(receiptFileUrl)
+  const isReceiptTrigger = isReceiptMessage(nextMessage)
 
   const { data: session } = await supabase
     .from('whatsapp_expense_sessions')
