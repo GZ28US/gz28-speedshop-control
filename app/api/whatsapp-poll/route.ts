@@ -139,7 +139,18 @@ export async function GET() {
       const body = String(message.body || '').trim()
       const receiptFileUrl = getReceiptFileUrl(message)
 
-      return message.id && (receiptFileUrl || (body && !isBotMessage(body)))
+      // ignore outgoing bot/self messages
+      if (message.fromMe === true) {
+        return false
+      }
+
+      return (
+        message.id &&
+        (
+          receiptFileUrl ||
+          (body && !isBotMessage(body))
+        )
+      )
     })
     .sort((a: any, b: any) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
 
@@ -177,7 +188,12 @@ export async function GET() {
   if (!session) {
     if (normalizedText !== 'expense' && !isReceiptTrigger) {
       await markProcessed(messageId)
-      return NextResponse.json({ success: true, message: 'Message ignored', body: text })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Message ignored',
+        body: text,
+      })
     }
 
     await supabase.from('whatsapp_expense_sessions').insert({
