@@ -67,7 +67,9 @@ function isBotMessage(body: string) {
     'Expense saved',
     'Expense canceled.',
     'Please reply YES to save or NO to cancel.',
+    'Please reply YES to save, NO to cancel, or C to cancel.',
     'Invalid option. Please choose a number from the list.',
+    'Invalid option. Please choose a number from the list, or C to cancel.',
   ].some((text) => body.startsWith(text))
 }
 
@@ -139,8 +141,9 @@ export async function GET() {
       const body = String(message.body || '').trim()
       const receiptFileUrl = getReceiptFileUrl(message)
 
-      // ignore outgoing bot/self messages
-      if (message.fromMe === true) {
+      // Ignore API bot messages only
+      // Allow user replies inside the WhatsApp group
+      if (message.fromMe === true && !message.author) {
         return false
       }
 
@@ -158,6 +161,7 @@ export async function GET() {
 
   for (const message of userMessages) {
     const processed = await wasProcessed(message.id)
+
     if (!processed) {
       nextMessage = message
       break
@@ -165,7 +169,10 @@ export async function GET() {
   }
 
   if (!nextMessage) {
-    return NextResponse.json({ success: true, message: 'No new messages' })
+    return NextResponse.json({
+      success: true,
+      message: 'No new messages',
+    })
   }
 
   const messageId = nextMessage.id
@@ -230,6 +237,7 @@ export async function GET() {
       .eq('id', session.id)
 
     const send = await sendMessage('Receipt attached ✅')
+
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -253,7 +261,10 @@ export async function GET() {
     const amount = parseAmount(text)
 
     if (!amount) {
-      const send = await sendMessage('Please send a valid amount. Example: USD 150')
+      const send = await sendMessage(
+        'Please send a valid amount. Example: USD 150'
+      )
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -305,7 +316,10 @@ export async function GET() {
     const selected = categories?.[choice]
 
     if (!selected) {
-      const send = await sendMessage('Invalid option. Please choose a number from the list, or C to cancel.')
+      const send = await sendMessage(
+        'Invalid option. Please choose a number from the list, or C to cancel.'
+      )
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -343,6 +357,7 @@ export async function GET() {
     }
 
     const send = await sendMessage('Description?')
+
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -360,7 +375,10 @@ export async function GET() {
     const selected = subcategories?.[choice]
 
     if (!selected) {
-      const send = await sendMessage('Invalid option. Please choose a number from the list, or C to cancel.')
+      const send = await sendMessage(
+        'Invalid option. Please choose a number from the list, or C to cancel.'
+      )
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -372,6 +390,7 @@ export async function GET() {
     }
 
     const previousPath = session.selected_category_path || ''
+
     const selectedPath = previousPath
       ? `${previousPath} > ${selected.name}`
       : selected.name
@@ -402,6 +421,7 @@ export async function GET() {
     }
 
     const send = await sendMessage('Description?')
+
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -426,16 +446,22 @@ export async function GET() {
       .eq('id', session.selected_category_id)
       .single()
 
-    const categoryText = session.selected_category_path || category?.name || 'Uncategorized'
-    const receiptLine = session.receipt_file_url ? `Receipt: Attached ✅\n` : ''
+    const categoryText =
+      session.selected_category_path ||
+      category?.name ||
+      'Uncategorized'
+
+    const receiptLine = session.receipt_file_url
+      ? `Receipt: Attached ✅\n`
+      : ''
 
     const send = await sendMessage(
       `Confirm expense:\n` +
-        `Amount: USD ${session.amount}\n` +
-        `Category: ${categoryText}\n` +
-        receiptLine +
-        `Description: ${text}\n\n` +
-        `Reply YES to save, NO to cancel, or C to cancel.`
+      `Amount: USD ${session.amount}\n` +
+      `Category: ${categoryText}\n` +
+      receiptLine +
+      `Description: ${text}\n\n` +
+      `Reply YES to save, NO to cancel, or C to cancel.`
     )
 
     await markProcessed(messageId)
@@ -468,6 +494,7 @@ export async function GET() {
         .eq('id', session.id)
 
       const send = await sendMessage('Expense saved ✅')
+
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -478,24 +505,13 @@ export async function GET() {
     }
 
     if (normalizedText === 'no') {
-      await supabase
-        .from('whatsapp_expense_sessions')
-        .update({
-          is_completed: true,
-        })
-        .eq('id', session.id)
-
-      const send = await sendMessage('Expense canceled.')
-      await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Expense canceled',
-        sent: send,
-      })
+      return await cancelSession(session.id, messageId)
     }
 
-    const send = await sendMessage('Please reply YES to save, NO to cancel, or C to cancel.')
+    const send = await sendMessage(
+      'Please reply YES to save, NO to cancel, or C to cancel.'
+    )
+
     await markProcessed(messageId)
 
     return NextResponse.json({
