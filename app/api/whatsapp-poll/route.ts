@@ -58,6 +58,7 @@ function isBotMessage(body: string) {
   return [
     'Amount?',
     'Receipt received',
+    'Receipt attached',
     'Please send a valid amount. Example: USD 150',
     'Choose main category:',
     'Choose subcategory:',
@@ -94,6 +95,32 @@ async function getChildren(parentId: string) {
     .order('code')
 
   return data || []
+}
+
+async function cancelSession(sessionId: string, messageId: string) {
+  await supabase
+    .from('whatsapp_expense_sessions')
+    .update({
+      is_completed: true,
+    })
+    .eq('id', sessionId)
+
+  const send = await sendMessage('Expense canceled.')
+  await markProcessed(messageId)
+
+  return NextResponse.json({
+    success: true,
+    message: 'Expense canceled',
+    sent: send,
+  })
+}
+
+function menuWithCancel(title: string, items: any[]) {
+  return (
+    `${title}\n` +
+    items.map((c, i) => `${i}. ${c.name}`).join('\n') +
+    '\n\nC. CANCEL'
+  )
 }
 
 export async function GET() {
@@ -142,6 +169,10 @@ export async function GET() {
     .eq('phone_number', GROUP_ID)
     .eq('is_completed', false)
     .maybeSingle()
+
+  if (session && normalizedText === 'c') {
+    return await cancelSession(session.id, messageId)
+  }
 
   if (!session) {
     if (normalizedText !== 'expense' && !isReceiptTrigger) {
@@ -233,8 +264,7 @@ export async function GET() {
       .order('code')
 
     const send = await sendMessage(
-      'Choose main category:\n' +
-        categories?.map((c, i) => `${i}. ${c.name}`).join('\n')
+      menuWithCancel('Choose main category:', categories || [])
     )
 
     await markProcessed(messageId)
@@ -259,7 +289,7 @@ export async function GET() {
     const selected = categories?.[choice]
 
     if (!selected) {
-      const send = await sendMessage('Invalid option. Please choose a number from the list.')
+      const send = await sendMessage('Invalid option. Please choose a number from the list, or C to cancel.')
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -284,8 +314,7 @@ export async function GET() {
 
     if (children.length > 0) {
       const send = await sendMessage(
-        'Choose subcategory:\n' +
-          children.map((c, i) => `${i}. ${c.name}`).join('\n')
+        menuWithCancel('Choose subcategory:', children)
       )
 
       await markProcessed(messageId)
@@ -315,7 +344,7 @@ export async function GET() {
     const selected = subcategories?.[choice]
 
     if (!selected) {
-      const send = await sendMessage('Invalid option. Please choose a number from the list.')
+      const send = await sendMessage('Invalid option. Please choose a number from the list, or C to cancel.')
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -344,8 +373,7 @@ export async function GET() {
 
     if (children.length > 0) {
       const send = await sendMessage(
-        'Choose subcategory:\n' +
-          children.map((c, i) => `${i}. ${c.name}`).join('\n')
+        menuWithCancel('Choose subcategory:', children)
       )
 
       await markProcessed(messageId)
@@ -391,7 +419,7 @@ export async function GET() {
         `Category: ${categoryText}\n` +
         receiptLine +
         `Description: ${text}\n\n` +
-        `Reply YES to save or NO to cancel.`
+        `Reply YES to save, NO to cancel, or C to cancel.`
     )
 
     await markProcessed(messageId)
@@ -451,7 +479,7 @@ export async function GET() {
       })
     }
 
-    const send = await sendMessage('Please reply YES to save or NO to cancel.')
+    const send = await sendMessage('Please reply YES to save, NO to cancel, or C to cancel.')
     await markProcessed(messageId)
 
     return NextResponse.json({
