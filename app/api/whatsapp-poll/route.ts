@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 const INSTANCE_ID = 'instance174454'
-const TOKEN = 'tcp7wqrfc5koodt3'
+const TOKEN = 'zrc6hvwki3g2w4ok'
 const GROUP_ID = '120363425950692194@g.us'
 
 async function sendMessage(text: string) {
