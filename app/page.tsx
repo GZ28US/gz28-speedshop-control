@@ -1,6 +1,3 @@
-# app/page.tsx
-
-```tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -53,16 +50,16 @@ export default function HomePage() {
         GZ28US Financial CONTROL
       </h1>
 
-      <div className="flex gap-4 mb-10 overflow-x-auto">
-        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold transition-all">
+      <div className="flex gap-4 mb-10">
+        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold">
           CLIENTS
         </button>
 
-        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold transition-all">
+        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold">
           RIDES
         </button>
 
-        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold transition-all">
+        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold">
           STAFF
         </button>
       </div>
@@ -70,23 +67,17 @@ export default function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-green-700 rounded-3xl p-6">
           <h2 className="text-2xl font-bold mb-3">Income</h2>
-          <p className="text-5xl">
-            ${income.toFixed(2)}
-          </p>
+          <p className="text-5xl">${income.toFixed(2)}</p>
         </div>
 
         <div className="bg-red-700 rounded-3xl p-6">
           <h2 className="text-2xl font-bold mb-3">Expenses</h2>
-          <p className="text-5xl">
-            ${expenses.toFixed(2)}
-          </p>
+          <p className="text-5xl">${expenses.toFixed(2)}</p>
         </div>
 
         <div className="bg-blue-700 rounded-3xl p-6">
           <h2 className="text-2xl font-bold mb-3">Profit</h2>
-          <p className="text-5xl">
-            ${profit.toFixed(2)}
-          </p>
+          <p className="text-5xl">${profit.toFixed(2)}</p>
         </div>
       </div>
 
