@@ -16,10 +16,24 @@ const years = [
 ]
 
 const manufacturersByYear: Record<number, string[]> = {
-  2009: ['MOPAR'], 2010: ['MOPAR'], 2011: ['MOPAR'], 2012: ['MOPAR'], 2013: ['MOPAR'],
-  2014: ['GM'], 2015: ['MOPAR', 'GM'], 2016: ['MOPAR', 'GM'], 2017: ['MOPAR', 'GM'],
-  2018: ['MOPAR', 'GM'], 2019: ['MOPAR', 'GM'], 2020: ['MOPAR', 'GM'], 2021: ['MOPAR', 'GM'],
-  2022: ['MOPAR', 'GM'], 2023: ['MOPAR', 'GM'], 2024: ['GM'], 2025: ['GM'], 2026: ['GM'],
+  2009: ['MOPAR'],
+  2010: ['MOPAR'],
+  2011: ['MOPAR'],
+  2012: ['MOPAR'],
+  2013: ['MOPAR'],
+  2014: ['GM'],
+  2015: ['MOPAR', 'GM'],
+  2016: ['MOPAR', 'GM'],
+  2017: ['MOPAR', 'GM', 'FORD'],
+  2018: ['MOPAR', 'GM', 'FORD'],
+  2019: ['MOPAR', 'GM', 'FORD'],
+  2020: ['MOPAR', 'GM', 'FORD'],
+  2021: ['MOPAR', 'GM', 'FORD'],
+  2022: ['MOPAR', 'GM', 'FORD'],
+  2023: ['MOPAR', 'GM', 'FORD'],
+  2024: ['GM', 'FORD'],
+  2025: ['GM'],
+  2026: ['GM'],
 }
 
 const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
@@ -32,6 +46,10 @@ const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
     2014: ['CHEVROLET'], 2015: ['CHEVROLET'], 2016: ['CHEVROLET'], 2017: ['CHEVROLET'],
     2018: ['CHEVROLET'], 2019: ['CHEVROLET'], 2020: ['CHEVROLET'], 2021: ['CHEVROLET'],
     2022: ['CHEVROLET'], 2023: ['CHEVROLET'], 2024: ['CHEVROLET'], 2025: ['CHEVROLET'], 2026: ['CHEVROLET'],
+  },
+  FORD: {
+    2017: ['FORD'], 2018: ['FORD'], 2019: ['FORD'], 2020: ['FORD'],
+    2021: ['FORD'], 2022: ['FORD'], 2023: ['FORD'], 2024: ['FORD'],
   },
 }
 
@@ -49,6 +67,10 @@ const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
     2018: ['CAMARO', 'CORVETTE'], 2019: ['CAMARO', 'CORVETTE'], 2020: ['CAMARO', 'CORVETTE'],
     2021: ['CAMARO', 'CORVETTE'], 2022: ['CAMARO', 'CORVETTE'], 2023: ['CAMARO', 'CORVETTE'],
     2024: ['CAMARO', 'CORVETTE'], 2025: ['CORVETTE'], 2026: ['CORVETTE'],
+  },
+  FORD: {
+    2017: ['F150'], 2018: ['F150'], 2019: ['F150'], 2020: ['F150'],
+    2021: ['F150'], 2022: ['F150'], 2023: ['F150'], 2024: ['F150'],
   },
 }
 
@@ -95,6 +117,11 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
     2014: ['1500 5.7'], 2015: ['1500 5.7', '1500 Rebel 5.7'], 2016: ['1500 5.7', '1500 Rebel 5.7'],
     2017: ['1500 5.7', '1500 Rebel 5.7'], 2018: ['1500 5.7', '1500 Rebel 5.7'],
   },
+  F150: {
+    2017: ['SuperSnake 5.0L SC'], 2018: ['SuperSnake 5.0L SC'], 2019: ['SuperSnake 5.0L SC'],
+    2020: ['SuperSnake 5.0L SC'], 2021: ['SuperSnake 5.0L SC'], 2022: ['SuperSnake 5.0L SC'],
+    2023: ['SuperSnake 5.0L SC'], 2024: ['SuperSnake 5.0L SC'],
+  },
 }
 
 const specialEditions: Record<string, string[]> = {
@@ -115,6 +142,7 @@ const moparColors = ['B5 Blue', 'Destroyer Gray', 'F8 Green', 'Frostbite', 'Go M
 const ramColors = ['Black', 'Bright White', 'Brilliant Black Crystal', 'Bright Silver Metallic', 'Deep Cherry Red Crystal', 'Maximum Steel Metallic', 'Granite Crystal Metallic', 'True Blue Pearl', 'Western Brown', 'Flame Red']
 const camaroColors = ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Rapid Blue', 'Shadow Gray', 'Sharkskin', 'Vivid Orange', 'Wild Cherry', 'Radiant Red', 'Panther Matte Black']
 const corvetteColors = ['Accelerate Yellow', 'Arctic White', 'Black', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Sea Wolf Gray', 'Silver Flare', 'Torch Red', 'White Pearl']
+const fordColors = ['Agate Black', 'Oxford White', 'Star White', 'Rapid Red', 'Antimatter Blue', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver', 'Velocity Blue', 'Lead Foot', 'Magma Red', 'Shadow Black']
 
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
@@ -215,7 +243,7 @@ export default function EditRidePage() {
   const availableSpecialEditions = specialEditions[`${year}-${model}-${version}`] || []
   const availableColors =
     colorsByConfiguration[`${year}-${model}-${version}-${specialEdition}`] ||
-    (brand === 'RAM' ? ramColors : model === 'CAMARO' ? camaroColors : model === 'CORVETTE' ? corvetteColors : moparColors)
+    (brand === 'RAM' ? ramColors : model === 'CAMARO' ? camaroColors : model === 'CORVETTE' ? corvetteColors : brand === 'FORD' ? fordColors : moparColors)
 
   async function saveRide() {
     const { error } = await supabase
