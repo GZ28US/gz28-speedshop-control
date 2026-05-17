@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
+import { supabase } from '@/lib/supabase'
 
 const years = [2018, 2019, 2020, 2021, 2022, 2023]
 
@@ -122,7 +123,7 @@ const colorsByConfiguration: Record<string, string[]> = {
     'Go Mango',
   ],
 
-  'default': [
+  default: [
     'Pitch Black',
     'White Knuckle',
     'Destroyer Grey',
@@ -161,6 +162,34 @@ export default function NewRidePage() {
 
   const [color, setColor] = useState(availableColors[0])
 
+  const [entryDate, setEntryDate] = useState('')
+  const [vin, setVin] = useState('')
+  const [plate, setPlate] = useState('')
+  const [performancePackage, setPerformancePackage] = useState('')
+  const [projectCode, setProjectCode] = useState('US.0001')
+
+  useEffect(() => {
+    async function loadNextProjectCode() {
+      const { data } = await supabase
+        .from('rides')
+        .select('project_code')
+        .order('project_code', { ascending: false })
+        .limit(1)
+
+      if (data && data.length > 0) {
+        const lastCode = data[0].project_code
+        const number = Number(lastCode.replace('US.', ''))
+        const nextNumber = number + 1
+
+        setProjectCode(
+          `US.${String(nextNumber).padStart(4, '0')}`
+        )
+      }
+    }
+
+    loadNextProjectCode()
+  }, [])
+
   useEffect(() => {
     setVersion(
       versionsByModelAndYear[model][year][0]
@@ -192,6 +221,36 @@ export default function NewRidePage() {
     setModel(value)
   }
 
+  async function saveRide() {
+    const { error } = await supabase
+      .from('rides')
+      .insert([
+        {
+          project_code: projectCode,
+          entry_date: entryDate,
+          manufacturer,
+          brand,
+          model,
+          version,
+          special_edition:
+            specialEdition === 'None'
+              ? null
+              : specialEdition,
+          color,
+          vin,
+          plate,
+          performance_package: performancePackage,
+        },
+      ])
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    alert('Ride saved successfully!')
+  }
+
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
@@ -201,6 +260,20 @@ export default function NewRidePage() {
       </h2>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
+        <input
+          type="text"
+          value={projectCode}
+          disabled
+          className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
+
+        <input
+          type="date"
+          value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value)}
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
+
         <select
           value={year}
           onChange={(e) => changeYear(e.target.value)}
@@ -213,21 +286,19 @@ export default function NewRidePage() {
           ))}
         </select>
 
-        <select
+        <input
+          type="text"
           value={manufacturer}
           disabled
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
-        >
-          <option>MOPAR</option>
-        </select>
+          className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
 
-        <select
+        <input
+          type="text"
           value={brand}
           disabled
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
-        >
-          <option>DODGE</option>
-        </select>
+          className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
 
         <select
           value={model}
@@ -279,7 +350,48 @@ export default function NewRidePage() {
           ))}
         </select>
 
-        <button className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">
+        <input
+          type="text"
+          placeholder="VIN"
+          value={vin}
+          onChange={(e) =>
+            setVin(
+              e.target.value
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+            )
+          }
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
+
+        <input
+          type="text"
+          placeholder="PLATE"
+          value={plate}
+          onChange={(e) =>
+            setPlate(
+              e.target.value
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+            )
+          }
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
+
+        <input
+          type="text"
+          placeholder="PERFORMANCE PACKAGE"
+          value={performancePackage}
+          onChange={(e) =>
+            setPerformancePackage(e.target.value)
+          }
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        />
+
+        <button
+          onClick={saveRide}
+          className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold"
+        >
           SAVE RIDE
         </button>
 
