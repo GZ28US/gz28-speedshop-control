@@ -159,12 +159,21 @@ const durangoColors2026 = ['Destroyer Gray', 'Diamond Black', 'Octane Red', 'Vap
 const durangoColors2026JailBreak = ['Destroyer Gray', 'Diamond Black', 'Green Machine', 'Octane Red', 'Vapor Gray', 'White Knuckle']
 
 const corvetteColorsByYear: Record<number, string[]> = {
+  // C7
   2014: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Cyber Gray', 'Laguna Blue', 'Lime Rock Green', 'Night Race Blue', 'Torch Red', 'Velocity Yellow'],
   2015: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Daytona Sunrise Orange', 'Laguna Blue', 'Night Race Blue', 'Shark Gray', 'Torch Red', 'Velocity Yellow'],
   2016: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Corvette Racing Yellow', 'Daytona Sunrise Orange', 'Laguna Blue', 'Long Beach Red', 'Night Race Blue', 'Shark Gray', 'Torch Red'],
   2017: ['Admiral Blue', 'Arctic White', 'Black', 'Black Rose', 'Blade Silver', 'Corvette Racing Yellow', 'Long Beach Red', 'Sterling Blue', 'Torch Red', 'Watkins Glen Gray'],
   2018: ['Admiral Blue', 'Arctic White', 'Black', 'Black Rose', 'Blade Silver', 'Ceramic Matrix Gray', 'Corvette Racing Yellow', 'Long Beach Red', 'Sebring Orange', 'Torch Red', 'Watkins Glen Gray'],
   2019: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Ceramic Gray', 'Corvette Yellow', 'Elkhart Blue', 'Long Beach Red', 'Sebring Orange', 'Shadow Gray', 'Torch Red', 'Watkins Glen Gray'],
+  // C8
+  2020: ['Arctic White', 'Black', 'Accelerate Yellow', 'Blade Silver', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Long Beach Red', 'Rapid Blue', 'Sebring Orange', 'Shadow Gray', 'Torch Red', 'Zeus Bronze'],
+  2021: ['Arctic White', 'Black', 'Accelerate Yellow', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Rapid Blue', 'Red Mist', 'Sebring Orange', 'Shadow Gray', 'Silver Flare', 'Torch Red', 'Zeus Bronze'],
+  2022: ['Arctic White', 'Black', 'Accelerate Yellow', 'Amplify Orange', 'Caffeine', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Silver Flare', 'Torch Red'],
+  2023: ['Arctic White', 'Black', 'Accelerate Yellow', 'Amplify Orange', 'Carbon Flash', 'Caffeine', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Silver Flare', 'Torch Red', 'White Pearl'],
+  2024: ['Arctic White', 'Black', 'Accelerate Yellow', 'Amplify Orange', 'Cacti Green', 'Carbon Flash', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Silver Flare', 'Torch Red'],
+  2025: ['Arctic White', 'Black', 'Competition Yellow', 'Hysteria Purple', 'Rapid Blue', 'Red Mist', 'Riptide Blue', 'Sebring Orange', 'Silver Flare', 'Torch Red'],
+  2026: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Competition Yellow', 'Hysteria Purple', 'Rapid Blue', 'Red Mist', 'Riptide Blue', 'Roswell Green', 'Sebring Orange', 'Torch Red'],
 }
 
 const colorsByConfiguration: Record<string, string[]> = {
@@ -182,13 +191,10 @@ const colorsByConfiguration: Record<string, string[]> = {
   '2026-DURANGO-SRT HellCat 6.2-JailBreak': durangoColors2026JailBreak,
 }
 
-const c8CorvetteColors = ['Accelerate Yellow', 'Arctic White', 'Black', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Sea Wolf Gray', 'Silver Flare', 'Torch Red', 'White Pearl']
-
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
   const key = `${year}-${model}-${version}-${specialEdition}`
   if (colorsByConfiguration[key]) return colorsByConfiguration[key]
   if (model === 'CORVETTE' && corvetteColorsByYear[year]) return corvetteColorsByYear[year]
-  if (model === 'CORVETTE') return c8CorvetteColors
   if (model === 'DURANGO' && year === 2026) return durangoColors2026
   if (model === 'DURANGO') return durangoColors
   if (brand === 'RAM') return ramColors
