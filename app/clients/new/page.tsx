@@ -3,16 +3,40 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+const usaStates = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+]
+
+const brazilStates = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+]
+
 export default function NewClientPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phone: '',
+    country: 'USA',
+    phone: '+1 ',
     address: '',
     city: '',
-    state: '',
+    state: 'FL',
     zip: '',
   })
+
+  function changeCountry(country: string) {
+    setForm({
+      ...form,
+      country,
+      phone: country === 'USA' ? '+1 ' : '+55 ',
+      state: country === 'USA' ? 'FL' : 'SP',
+    })
+  }
 
   async function saveClient() {
     if (!form.name.trim()) {
@@ -25,6 +49,7 @@ export default function NewClientPage() {
       .insert({
         name: form.name,
         email: form.email,
+        country: form.country,
         phone: form.phone,
         address: form.address,
         city: form.city,
@@ -39,6 +64,8 @@ export default function NewClientPage() {
 
     window.location.href = '/clients'
   }
+
+  const stateOptions = form.country === 'USA' ? usaStates : brazilStates
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -70,6 +97,15 @@ export default function NewClientPage() {
           }
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
         />
+
+        <select
+          value={form.country}
+          onChange={(e) => changeCountry(e.target.value)}
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+        >
+          <option value="USA">USA</option>
+          <option value="BRAZIL">BRAZIL</option>
+        </select>
 
         <input
           placeholder="PHONE"
@@ -107,8 +143,7 @@ export default function NewClientPage() {
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
         />
 
-        <input
-          placeholder="STATE"
+        <select
           value={form.state}
           onChange={(e) =>
             setForm({
@@ -117,7 +152,13 @@ export default function NewClientPage() {
             })
           }
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+        >
+          {stateOptions.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
 
         <input
           placeholder="ZIP"
