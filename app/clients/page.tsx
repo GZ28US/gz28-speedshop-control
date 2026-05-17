@@ -10,6 +10,35 @@ type Client = {
   phone: string | null
   city: string | null
   state: string | null
+  country: string | null
+}
+
+function formatPhone(phone: string | null, country: string | null) {
+  if (!phone) return ''
+
+  const numbers = phone.replace(/\D/g, '')
+
+  if (country === 'USA') {
+    const cleaned = numbers.startsWith('1')
+      ? numbers.slice(1)
+      : numbers
+
+    if (cleaned.length >= 10) {
+      return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`
+    }
+  }
+
+  if (country === 'BRAZIL') {
+    const cleaned = numbers.startsWith('55')
+      ? numbers.slice(2)
+      : numbers
+
+    if (cleaned.length >= 10) {
+      return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`
+    }
+  }
+
+  return phone
 }
 
 export default function ClientsPage() {
@@ -81,7 +110,7 @@ export default function ClientsPage() {
               </p>
 
               <p className="text-gray-400">
-                {client.phone}
+                {formatPhone(client.phone, client.country)}
               </p>
 
               <p className="text-gray-400 mb-5">
