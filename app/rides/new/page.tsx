@@ -218,7 +218,7 @@ export default function NewRidePage() {
           : null
       }) || []
 
-    let nextNumber = 1
+    let nextNumber = 0
 
     while (
       usedNumbers.includes(nextNumber)
