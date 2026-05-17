@@ -56,6 +56,13 @@ export default function RidesPage() {
         RIDES
       </h2>
 
+      <a
+        href="/rides/new"
+        className="inline-block bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold mb-10"
+      >
+        ADD A NEW RIDE
+      </a>
+
       <div className="space-y-5">
         {rides.length === 0 ? (
           <p className="text-gray-400 text-xl">
