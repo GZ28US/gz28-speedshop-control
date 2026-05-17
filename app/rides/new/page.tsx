@@ -10,11 +10,35 @@ type Client = {
   name: string
 }
 
-const years = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+const years = [
+  2009,
+  2010,
+  2011,
+  2012,
+  2013,
+  2014,
+  2015,
+  2016,
+  2017,
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+]
 
 const manufacturersByYear: Record<number, string[]> = {
-  2016: ['GM'],
-  2017: ['GM'],
+  2009: ['MOPAR'],
+  2010: ['MOPAR'],
+  2011: ['MOPAR'],
+  2012: ['MOPAR'],
+  2013: ['MOPAR'],
+  2014: ['MOPAR'],
+  2015: ['MOPAR'],
+  2016: ['MOPAR', 'GM'],
+  2017: ['MOPAR', 'GM'],
   2018: ['MOPAR', 'GM'],
   2019: ['MOPAR', 'GM'],
   2020: ['MOPAR', 'GM'],
@@ -24,60 +48,358 @@ const manufacturersByYear: Record<number, string[]> = {
   2024: ['GM'],
 }
 
-const brandsByManufacturer: Record<string, string[]> = {
-  MOPAR: ['DODGE'],
-  GM: ['CHEVROLET'],
+const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
+  MOPAR: {
+    2009: ['RAM'],
+    2010: ['RAM'],
+    2011: ['RAM'],
+    2012: ['RAM'],
+    2013: ['RAM'],
+    2014: ['RAM'],
+    2015: ['RAM'],
+    2016: ['RAM'],
+    2017: ['RAM'],
+    2018: ['DODGE', 'RAM'],
+    2019: ['DODGE'],
+    2020: ['DODGE'],
+    2021: ['DODGE'],
+    2022: ['DODGE'],
+    2023: ['DODGE'],
+  },
+  GM: {
+    2016: ['CHEVROLET'],
+    2017: ['CHEVROLET'],
+    2018: ['CHEVROLET'],
+    2019: ['CHEVROLET'],
+    2020: ['CHEVROLET'],
+    2021: ['CHEVROLET'],
+    2022: ['CHEVROLET'],
+    2023: ['CHEVROLET'],
+    2024: ['CHEVROLET'],
+  },
 }
 
-const modelsByBrand: Record<string, string[]> = {
-  DODGE: ['CHALLENGER', 'CHARGER'],
-  CHEVROLET: ['CAMARO'],
+const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
+  DODGE: {
+    2018: ['CHALLENGER', 'CHARGER'],
+    2019: ['CHALLENGER', 'CHARGER'],
+    2020: ['CHALLENGER', 'CHARGER'],
+    2021: ['CHALLENGER', 'CHARGER'],
+    2022: ['CHALLENGER', 'CHARGER'],
+    2023: ['CHALLENGER', 'CHARGER'],
+  },
+  RAM: {
+    2009: ['1500'],
+    2010: ['1500'],
+    2011: ['1500'],
+    2012: ['1500'],
+    2013: ['1500'],
+    2014: ['1500'],
+    2015: ['1500'],
+    2016: ['1500'],
+    2017: ['1500'],
+    2018: ['1500'],
+  },
+  CHEVROLET: {
+    2016: ['CAMARO'],
+    2017: ['CAMARO'],
+    2018: ['CAMARO'],
+    2019: ['CAMARO'],
+    2020: ['CAMARO'],
+    2021: ['CAMARO'],
+    2022: ['CAMARO'],
+    2023: ['CAMARO'],
+    2024: ['CAMARO'],
+  },
 }
 
 const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
   CHALLENGER: {
-    2018: ['R/T 5.7', 'R/T ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT Demon 6.2'],
-    2019: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2020: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2'],
-    2021: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2'],
-    2022: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2'],
-    2023: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2', 'SRT Demon 170 6.2'],
+    2018: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'SRT 392 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT Demon 6.2',
+    ],
+    2019: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2020: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2021: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2022: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2023: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+      'SRT Demon 170 6.2',
+    ],
   },
 
   CHARGER: {
-    2018: ['R/T 5.7', 'ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2'],
-    2019: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2020: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2021: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2022: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2023: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2018: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'SRT 392 6.4',
+      'SRT HellCat 6.2',
+    ],
+    2019: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2020: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2021: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2022: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2023: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
   },
 
   CAMARO: {
-    2016: ['SS 6.2', 'SS 1LE 6.2'],
-    2017: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2018: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2019: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2020: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2021: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2022: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2023: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
-    2024: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2', 'Collector Edition LT1 6.2', 'Collector Edition SS 6.2', 'Collector Edition ZL1 6.2'],
+    2016: [
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+    ],
+    2017: [
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2018: [
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2019: [
+      'LT1 6.2',
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2020: [
+      'LT1 6.2',
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2021: [
+      'LT1 6.2',
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2022: [
+      'LT1 6.2',
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2023: [
+      'LT1 6.2',
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+    ],
+    2024: [
+      'LT1 6.2',
+      'SS 6.2',
+      'SS 1LE 6.2',
+      'ZL1 6.2',
+      'ZL1 1LE 6.2',
+      'Panther Collector Edition LT1 6.2',
+      'Panther Collector Edition SS 6.2',
+      'Panther Collector Edition ZL1 6.2',
+    ],
+  },
+
+  '1500': {
+    2009: [
+      '1500 5.7',
+    ],
+    2010: [
+      '1500 5.7',
+    ],
+    2011: [
+      '1500 5.7',
+    ],
+    2012: [
+      '1500 5.7',
+    ],
+    2013: [
+      '1500 5.7',
+    ],
+    2014: [
+      '1500 5.7',
+    ],
+    2015: [
+      '1500 5.7',
+      '1500 Rebel 5.7',
+    ],
+    2016: [
+      '1500 5.7',
+      '1500 Rebel 5.7',
+    ],
+    2017: [
+      '1500 5.7',
+      '1500 Rebel 5.7',
+    ],
+    2018: [
+      '1500 5.7',
+      '1500 Rebel 5.7',
+    ],
   },
 }
 
 const specialEditions: Record<string, string[]> = {
-  '2019-CHALLENGER-R/T ScatPack 6.4': ['None', '1320'],
-  '2023-CHALLENGER-R/T ScatPack 6.4': ['None', 'Swinger', 'Shakedown', 'Mopar Edition', 'T/A', 'Shaker'],
-  '2023-CHALLENGER-R/T ScatPack WideBody 6.4': ['None', 'Swinger', 'Shakedown', 'Mopar Edition', 'T/A', 'Shaker'],
-  '2023-CHALLENGER-SRT HellCat 6.2': ['None', 'Black Ghost', 'Jailbreak'],
-  '2023-CHALLENGER-SRT HellCat WideBody 6.2': ['None', 'Black Ghost', 'Jailbreak'],
-  '2023-CHALLENGER-SRT HellCat RedEye 6.2': ['None', 'Jailbreak'],
-  '2023-CHALLENGER-SRT HellCat RedEye WideBody 6.2': ['None', 'Jailbreak'],
-  '2023-CHARGER-ScatPack 6.4': ['None', 'Super Bee'],
-  '2023-CHARGER-ScatPack WideBody 6.4': ['None', 'Super Bee'],
-  '2023-CHARGER-SRT HellCat RedEye 6.2': ['None', 'King Daytona', 'Daytona', 'Jailbreak'],
-  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': ['None', 'King Daytona', 'Daytona', 'Jailbreak'],
+  '2019-CHALLENGER-R/T ScatPack 6.4': [
+    'None',
+    '1320',
+  ],
+
+  '2023-CHALLENGER-R/T ScatPack 6.4': [
+    'None',
+    'Swinger',
+    'Shakedown',
+    'Mopar Edition',
+    'T/A',
+    'Shaker',
+  ],
+
+  '2023-CHALLENGER-R/T ScatPack WideBody 6.4': [
+    'None',
+    'Swinger',
+    'Shakedown',
+    'Mopar Edition',
+    'T/A',
+    'Shaker',
+  ],
+
+  '2023-CHALLENGER-SRT HellCat 6.2': [
+    'None',
+    'Black Ghost',
+    'Jailbreak',
+  ],
+
+  '2023-CHALLENGER-SRT HellCat WideBody 6.2': [
+    'None',
+    'Black Ghost',
+    'Jailbreak',
+  ],
+
+  '2023-CHALLENGER-SRT HellCat RedEye 6.2': [
+    'None',
+    'Jailbreak',
+  ],
+
+  '2023-CHALLENGER-SRT HellCat RedEye WideBody 6.2': [
+    'None',
+    'Jailbreak',
+  ],
+
+  '2023-CHARGER-ScatPack 6.4': [
+    'None',
+    'Super Bee',
+  ],
+
+  '2023-CHARGER-ScatPack WideBody 6.4': [
+    'None',
+    'Super Bee',
+  ],
+
+  '2023-CHARGER-SRT HellCat RedEye 6.2': [
+    'None',
+    'King Daytona',
+    'Daytona',
+    'Jailbreak',
+  ],
+
+  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': [
+    'None',
+    'King Daytona',
+    'Daytona',
+    'Jailbreak',
+  ],
 }
 
 const moparColors = [
@@ -97,6 +419,19 @@ const moparColors = [
   'White Knuckle',
 ]
 
+const ramColors = [
+  'Black',
+  'Bright White',
+  'Brilliant Black Crystal',
+  'Bright Silver Metallic',
+  'Deep Cherry Red Crystal',
+  'Maximum Steel Metallic',
+  'Granite Crystal Metallic',
+  'True Blue Pearl',
+  'Western Brown',
+  'Flame Red',
+]
+
 const camaroColors = [
   'Black',
   'Summit White',
@@ -108,13 +443,41 @@ const camaroColors = [
   'Vivid Orange',
   'Wild Cherry',
   'Radiant Red',
+  'Panther Matte Black',
 ]
 
 const colorsByConfiguration: Record<string, string[]> = {
-  '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
-  '2023-CHALLENGER-R/T ScatPack WideBody 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
-  '2023-CHARGER-SRT HellCat RedEye 6.2-King Daytona': ['Go Mango'],
-  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2-King Daytona': ['Go Mango'],
+  '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': [
+    'Sublime',
+    'F8 Green',
+    'White Knuckle',
+  ],
+
+  '2023-CHALLENGER-R/T ScatPack WideBody 6.4-Swinger': [
+    'Sublime',
+    'F8 Green',
+    'White Knuckle',
+  ],
+
+  '2023-CHARGER-SRT HellCat RedEye 6.2-King Daytona': [
+    'Go Mango',
+  ],
+
+  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2-King Daytona': [
+    'Go Mango',
+  ],
+
+  '2024-CAMARO-Panther Collector Edition LT1 6.2-None': [
+    'Panther Matte Black',
+  ],
+
+  '2024-CAMARO-Panther Collector Edition SS 6.2-None': [
+    'Panther Matte Black',
+  ],
+
+  '2024-CAMARO-Panther Collector Edition ZL1 6.2-None': [
+    'Panther Matte Black',
+  ],
 }
 
 export default function NewRidePage() {
@@ -125,6 +488,7 @@ export default function NewRidePage() {
 
   const [projectCode, setProjectCode] = useState('US.000')
   const [projectName, setProjectName] = useState('')
+
   const [vin, setVin] = useState('')
   const [plate, setPlate] = useState('')
 
@@ -132,7 +496,9 @@ export default function NewRidePage() {
   const [manufacturer, setManufacturer] = useState('MOPAR')
   const [brand, setBrand] = useState('DODGE')
   const [model, setModel] = useState('CHALLENGER')
-  const [version, setVersion] = useState(versionsByModelAndYear.CHALLENGER[2023][0])
+  const [version, setVersion] = useState(
+    versionsByModelAndYear.CHALLENGER[2023][0]
+  )
   const [specialEdition, setSpecialEdition] = useState('None')
   const [color, setColor] = useState(moparColors[0])
 
@@ -162,6 +528,7 @@ export default function NewRidePage() {
     const usedNumbers =
       data?.map((item) => {
         const match = item.project_code?.match(/US\.(\d+)/)
+
         return match ? Number(match[1]) : null
       }) || []
 
@@ -176,30 +543,42 @@ export default function NewRidePage() {
 
   useEffect(() => {
     const availableManufacturers = manufacturersByYear[year]
+    const newManufacturer = availableManufacturers.includes(manufacturer)
+      ? manufacturer
+      : availableManufacturers[0]
 
-    if (!availableManufacturers.includes(manufacturer)) {
-      setManufacturer(availableManufacturers[0])
-    }
+    setManufacturer(newManufacturer)
   }, [year, manufacturer])
 
   useEffect(() => {
-    const firstBrand = brandsByManufacturer[manufacturer][0]
-    setBrand(firstBrand)
-  }, [manufacturer])
+    const availableBrands =
+      brandsByManufacturerAndYear[manufacturer]?.[year] || []
+
+    if (!availableBrands.includes(brand)) {
+      setBrand(availableBrands[0] || '')
+    }
+  }, [year, manufacturer, brand])
 
   useEffect(() => {
-    const firstModel = modelsByBrand[brand][0]
-    setModel(firstModel)
-  }, [brand])
+    const availableModels =
+      modelsByBrandAndYear[brand]?.[year] || []
+
+    if (!availableModels.includes(model)) {
+      setModel(availableModels[0] || '')
+    }
+  }, [year, brand, model])
 
   useEffect(() => {
-    const availableVersions = versionsByModelAndYear[model]?.[year] || []
+    const availableVersions =
+      versionsByModelAndYear[model]?.[year] || []
+
     setVersion(availableVersions[0] || '')
   }, [year, model])
 
   useEffect(() => {
     const key = `${year}-${model}-${version}`
     const options = specialEditions[key] || []
+
     setSpecialEdition(options[0] || 'None')
   }, [year, model, version])
 
@@ -211,26 +590,41 @@ export default function NewRidePage() {
       return
     }
 
-    setColor(model === 'CAMARO' ? camaroColors[0] : moparColors[0])
-  }, [year, model, version, specialEdition])
+    if (brand === 'RAM') {
+      setColor(ramColors[0])
+      return
+    }
+
+    if (model === 'CAMARO') {
+      setColor(camaroColors[0])
+      return
+    }
+
+    setColor(moparColors[0])
+  }, [year, brand, model, version, specialEdition])
 
   async function saveRide() {
-    const { error } = await supabase.from('rides').insert([
-      {
-        client_id: clientId || null,
-        project_code: projectCode,
-        project_name: projectName,
-        year,
-        manufacturer,
-        brand,
-        model,
-        version,
-        special_edition: specialEdition === 'None' ? null : specialEdition,
-        color,
-        vin,
-        plate,
-      },
-    ])
+    const { error } = await supabase
+      .from('rides')
+      .insert([
+        {
+          client_id: clientId || null,
+          project_code: projectCode,
+          project_name: projectName,
+          year,
+          manufacturer,
+          brand,
+          model,
+          version,
+          special_edition:
+            specialEdition === 'None'
+              ? null
+              : specialEdition,
+          color,
+          vin,
+          plate,
+        },
+      ])
 
     if (error) {
       alert(error.message)
@@ -240,119 +634,280 @@ export default function NewRidePage() {
     router.push('/rides')
   }
 
-  const availableManufacturers = manufacturersByYear[year]
-  const availableVersions = versionsByModelAndYear[model]?.[year] || []
-  const availableSpecialEditions = specialEditions[`${year}-${model}-${version}`] || []
+  const availableManufacturers = manufacturersByYear[year] || []
+  const availableBrands =
+    brandsByManufacturerAndYear[manufacturer]?.[year] || []
+  const availableModels =
+    modelsByBrandAndYear[brand]?.[year] || []
+  const availableVersions =
+    versionsByModelAndYear[model]?.[year] || []
+  const availableSpecialEditions =
+    specialEditions[`${year}-${model}-${version}`] || []
+
   const availableColors =
     colorsByConfiguration[`${year}-${model}-${version}-${specialEdition}`] ||
-    (model === 'CAMARO' ? camaroColors : moparColors)
+    (brand === 'RAM'
+      ? ramColors
+      : model === 'CAMARO'
+        ? camaroColors
+        : moparColors)
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
 
-      <h2 className="text-4xl font-bold mb-8">ADD A NEW RIDE</h2>
+      <h2 className="text-4xl font-bold mb-8">
+        ADD A NEW RIDE
+      </h2>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
         <div>
-          <label className="block mb-2 text-lg font-bold">CLIENT</label>
-          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
+          <label className="block mb-2 text-lg font-bold">
+            CLIENT
+          </label>
+
+          <select
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
             {clients.map((client) => (
-              <option key={client.id} value={client.id}>{client.name}</option>
+              <option
+                key={client.id}
+                value={client.id}
+              >
+                {client.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">PROJECT CODE</label>
-          <input type="text" value={projectCode} onChange={(e) => setProjectCode(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl" />
+          <label className="block mb-2 text-lg font-bold">
+            PROJECT CODE
+          </label>
+
+          <input
+            type="text"
+            value={projectCode}
+            onChange={(e) => setProjectCode(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">PROJECT NAME</label>
-          <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl" />
+          <label className="block mb-2 text-lg font-bold">
+            PROJECT NAME
+          </label>
+
+          <input
+            type="text"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">VIN</label>
-          <input type="text" value={vin} onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl" />
+          <label className="block mb-2 text-lg font-bold">
+            VIN
+          </label>
+
+          <input
+            type="text"
+            value={vin}
+            onChange={(e) =>
+              setVin(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, '')
+              )
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">PLATE</label>
-          <input type="text" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl" />
+          <label className="block mb-2 text-lg font-bold">
+            PLATE
+          </label>
+
+          <input
+            type="text"
+            value={plate}
+            onChange={(e) =>
+              setPlate(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, '')
+              )
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">YEAR</label>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
+          <label className="block mb-2 text-lg font-bold">
+            YEAR
+          </label>
+
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
             {years.map((option) => (
-              <option key={option} value={option}>{option}</option>
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">MANUFACTURER</label>
-          <select value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
+          <label className="block mb-2 text-lg font-bold">
+            MANUFACTURER
+          </label>
+
+          <select
+            value={manufacturer}
+            onChange={(e) => setManufacturer(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
             {availableManufacturers.map((option) => (
-              <option key={option} value={option}>{option}</option>
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">BRAND</label>
-          <select value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
-            {brandsByManufacturer[manufacturer].map((option) => (
-              <option key={option} value={option}>{option}</option>
+          <label className="block mb-2 text-lg font-bold">
+            BRAND
+          </label>
+
+          <select
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {availableBrands.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">MODEL</label>
-          <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
-            {modelsByBrand[brand].map((option) => (
-              <option key={option} value={option}>{option}</option>
+          <label className="block mb-2 text-lg font-bold">
+            MODEL
+          </label>
+
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {availableModels.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">VERSION</label>
-          <select value={version} onChange={(e) => setVersion(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
+          <label className="block mb-2 text-lg font-bold">
+            VERSION
+          </label>
+
+          <select
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
             {availableVersions.map((option) => (
-              <option key={option} value={option}>{option}</option>
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
             ))}
           </select>
         </div>
 
         {availableSpecialEditions.length > 0 && (
           <div>
-            <label className="block mb-2 text-lg font-bold">SPECIAL EDITION</label>
-            <select value={specialEdition} onChange={(e) => setSpecialEdition(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
+            <label className="block mb-2 text-lg font-bold">
+              SPECIAL EDITION
+            </label>
+
+            <select
+              value={specialEdition}
+              onChange={(e) => setSpecialEdition(e.target.value)}
+              className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+            >
               {availableSpecialEditions.map((option) => (
-                <option key={option} value={option}>{option}</option>
+                <option
+                  key={option}
+                  value={option}
+                >
+                  {option}
+                </option>
               ))}
             </select>
           </div>
         )}
 
         <div>
-          <label className="block mb-2 text-lg font-bold">COLOR</label>
-          <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl">
+          <label className="block mb-2 text-lg font-bold">
+            COLOR
+          </label>
+
+          <select
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
             {availableColors.map((option) => (
-              <option key={option} value={option}>{option}</option>
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
             ))}
           </select>
         </div>
 
-        <button onClick={saveRide} className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">
+        <button
+          onClick={saveRide}
+          className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold"
+        >
           SAVE RIDE
         </button>
 
-        <a href="/rides" className="text-gray-400 text-xl">Cancel</a>
+        <a
+          href="/rides"
+          className="text-gray-400 text-xl"
+        >
+          Cancel
+        </a>
       </div>
     </main>
   )
