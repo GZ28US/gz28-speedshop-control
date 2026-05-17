@@ -24,6 +24,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
     ],
     2020: [
       'R/T 5.7',
@@ -32,6 +33,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
       'SRT HellCat RedEye SuperStock 6.2',
     ],
     2021: [
@@ -41,6 +43,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
       'SRT HellCat RedEye SuperStock 6.2',
     ],
     2022: [
@@ -50,6 +53,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
       'SRT HellCat RedEye SuperStock 6.2',
     ],
     2023: [
@@ -59,6 +63,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
       'SRT HellCat RedEye SuperStock 6.2',
       'SRT Demon 170 6.2',
     ],
@@ -76,6 +81,8 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'ScatPack 6.4',
       'ScatPack WideBody 6.4',
       'SRT HellCat 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
     ],
     2020: [
       'R/T 5.7',
@@ -83,6 +90,8 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'ScatPack WideBody 6.4',
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
     ],
     2021: [
       'R/T 5.7',
@@ -91,6 +100,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
     ],
     2022: [
       'R/T 5.7',
@@ -99,6 +109,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
     ],
     2023: [
       'R/T 5.7',
@@ -107,6 +118,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat 6.2',
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
       'King Daytona 6.2',
     ],
   },
