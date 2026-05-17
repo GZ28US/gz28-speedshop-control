@@ -119,35 +119,71 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
       'SRT HellCat WideBody 6.2',
       'SRT HellCat RedEye 6.2',
       'SRT HellCat RedEye WideBody 6.2',
-      'King Daytona 6.2',
     ],
   },
 }
 
 const specialEditions: Record<string, string[]> = {
+  '2019-CHALLENGER-R/T ScatPack 6.4': [
+    '1320',
+  ],
+
   '2023-CHALLENGER-R/T ScatPack 6.4': [
-    'None',
     'Swinger',
     'Shakedown',
+    'Mopar Edition',
+    'T/A',
+    'Shaker',
   ],
+
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4': [
-    'None',
-    'Swinger WideBody',
-    'Shakedown WideBody',
-  ],
-  '2023-CHARGER-ScatPack 6.4': [
-    'None',
     'Swinger',
+    'Shakedown',
+    'Mopar Edition',
+    'T/A',
+    'Shaker',
   ],
-  '2023-CHARGER-ScatPack WideBody 6.4': [
-    'None',
-    'Swinger WideBody',
+
+  '2023-CHALLENGER-SRT HellCat 6.2': [
+    'Black Ghost',
+    'Jailbreak',
   ],
-  '2023-CHARGER-King Daytona 6.2': [
-    'King Daytona',
+
+  '2023-CHALLENGER-SRT HellCat WideBody 6.2': [
+    'Black Ghost',
+    'Jailbreak',
   ],
+
+  '2023-CHALLENGER-SRT HellCat RedEye 6.2': [
+    'Jailbreak',
+  ],
+
+  '2023-CHALLENGER-SRT HellCat RedEye WideBody 6.2': [
+    'Jailbreak',
+  ],
+
   '2023-CHALLENGER-SRT Demon 170 6.2': [
     'Demon 170',
+  ],
+
+  '2023-CHARGER-ScatPack 6.4': [
+    'Super Bee',
+  ],
+
+  '2023-CHARGER-ScatPack WideBody 6.4': [
+    'Super Bee',
+  ],
+
+  '2023-CHARGER-SRT HellCat RedEye 6.2': [
+    'King Daytona',
+    'Daytona',
+    'Jailbreak',
+  ],
+
+  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': [
+    'King Daytona',
+    'Daytona',
+    'Jailbreak',
   ],
 }
 
@@ -165,7 +201,8 @@ export default function NewRidePage() {
 
   const specialEditionKey = `${year}-${model}-${version}`
   const availableSpecialEditions = specialEditions[specialEditionKey] || []
-  const [specialEdition, setSpecialEdition] = useState('None')
+
+  const [specialEdition, setSpecialEdition] = useState('')
 
   useEffect(() => {
     setVersion(
@@ -177,7 +214,7 @@ export default function NewRidePage() {
     const key = `${year}-${model}-${version}`
     const options = specialEditions[key] || []
 
-    setSpecialEdition(options[0] || 'None')
+    setSpecialEdition(options[0] || '')
   }, [year, model, version])
 
   function changeYear(value: string) {
