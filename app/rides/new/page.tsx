@@ -124,6 +124,33 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
   },
 }
 
+const specialEditions: Record<string, string[]> = {
+  '2023-CHALLENGER-R/T ScatPack 6.4': [
+    'None',
+    'Swinger',
+    'Shakedown',
+  ],
+  '2023-CHALLENGER-R/T ScatPack WideBody 6.4': [
+    'None',
+    'Swinger WideBody',
+    'Shakedown WideBody',
+  ],
+  '2023-CHARGER-ScatPack 6.4': [
+    'None',
+    'Swinger',
+  ],
+  '2023-CHARGER-ScatPack WideBody 6.4': [
+    'None',
+    'Swinger WideBody',
+  ],
+  '2023-CHARGER-King Daytona 6.2': [
+    'King Daytona',
+  ],
+  '2023-CHALLENGER-SRT Demon 170 6.2': [
+    'Demon 170',
+  ],
+}
+
 export default function NewRidePage() {
   const [year, setYear] = useState(2023)
 
@@ -136,11 +163,22 @@ export default function NewRidePage() {
     versionsByModelAndYear.CHALLENGER[2023][0]
   )
 
+  const specialEditionKey = `${year}-${model}-${version}`
+  const availableSpecialEditions = specialEditions[specialEditionKey] || []
+  const [specialEdition, setSpecialEdition] = useState('None')
+
   useEffect(() => {
     setVersion(
       versionsByModelAndYear[model][year][0]
     )
   }, [year, model])
+
+  useEffect(() => {
+    const key = `${year}-${model}-${version}`
+    const options = specialEditions[key] || []
+
+    setSpecialEdition(options[0] || 'None')
+  }, [year, model, version])
 
   function changeYear(value: string) {
     setYear(Number(value))
@@ -210,6 +248,20 @@ export default function NewRidePage() {
             </option>
           ))}
         </select>
+
+        {availableSpecialEditions.length > 0 && (
+          <select
+            value={specialEdition}
+            onChange={(e) => setSpecialEdition(e.target.value)}
+            className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {availableSpecialEditions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        )}
 
         <button className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">
           SAVE RIDE
