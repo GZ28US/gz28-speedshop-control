@@ -1,132 +1,77 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Header from '@/components/Header'
 
-const years = Array.from({ length: 9 }, (_, i) => 2015 + i)
+const years = [2018, 2019, 2020, 2021, 2022, 2023]
 
-const rideOptions = [
-  { year: 2015, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2015, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2015, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT 392 6.4 HEMI' },
-  { year: 2015, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2016, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2016, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2016, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT 392 6.4 HEMI' },
-  { year: 2016, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2017, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2017, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2017, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT 392 6.4 HEMI' },
-  { year: 2017, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2018, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2018, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2018, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT 392 6.4 HEMI' },
-  { year: 2018, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-  { year: 2018, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI' },
-  { year: 2018, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT DEMON 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2019, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2019, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2019, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK WIDEBODY 6.4 HEMI' },
-  { year: 2019, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-  { year: 2019, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI' },
-  { year: 2019, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK WIDEBODY 6.4 HEMI' },
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI' },
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI' },
-  { year: 2020, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK WIDEBODY 6.4 HEMI' },
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI' },
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI' },
-  { year: 2021, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK WIDEBODY 6.4 HEMI' },
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI' },
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI' },
-  { year: 2022, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI' },
-
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T 5.7 HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK 6.4 HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'R/T SCAT PACK WIDEBODY 6.4 HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT 6.2 SUPERCHARGED HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI' },
-  { year: 2023, manufacturer: 'MOPAR', brand: 'DODGE', model: 'CHALLENGER', version: 'SRT DEMON 170 6.2 SUPERCHARGED HEMI' },
-]
+const versionsByYear: Record<number, string[]> = {
+  2018: [
+    'R/T 5.7 HEMI',
+    'R/T SCAT PACK 6.4 HEMI',
+    'SRT 392 6.4 HEMI',
+    'SRT HELLCAT 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI',
+    'SRT DEMON 6.2 SUPERCHARGED HEMI',
+  ],
+  2019: [
+    'R/T 5.7 HEMI',
+    'R/T SCAT PACK 6.4 HEMI',
+    'R/T SCAT PACK WIDEBODY 6.4 HEMI',
+    'SRT HELLCAT 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI',
+  ],
+  2020: [
+    'R/T 5.7 HEMI',
+    'R/T SCAT PACK 6.4 HEMI',
+    'R/T SCAT PACK WIDEBODY 6.4 HEMI',
+    'SRT HELLCAT 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI',
+    'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI',
+  ],
+  2021: [
+    'R/T 5.7 HEMI',
+    'R/T SCAT PACK 6.4 HEMI',
+    'R/T SCAT PACK WIDEBODY 6.4 HEMI',
+    'SRT HELLCAT 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI',
+    'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI',
+  ],
+  2022: [
+    'R/T 5.7 HEMI',
+    'R/T SCAT PACK 6.4 HEMI',
+    'R/T SCAT PACK WIDEBODY 6.4 HEMI',
+    'SRT HELLCAT 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI',
+    'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI',
+  ],
+  2023: [
+    'R/T 5.7 HEMI',
+    'R/T SCAT PACK 6.4 HEMI',
+    'R/T SCAT PACK WIDEBODY 6.4 HEMI',
+    'SRT HELLCAT 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT WIDEBODY 6.2 SUPERCHARGED HEMI',
+    'SRT HELLCAT REDEYE 6.2 SUPERCHARGED HEMI',
+    'SRT SUPER STOCK 6.2 SUPERCHARGED HEMI',
+    'SRT DEMON 170 6.2 SUPERCHARGED HEMI',
+  ],
+}
 
 export default function NewRidePage() {
   const [year, setYear] = useState(2023)
-  const [manufacturer, setManufacturer] = useState('MOPAR')
-  const [brand, setBrand] = useState('DODGE')
-  const [model, setModel] = useState('CHALLENGER')
-  const [version, setVersion] = useState('')
-
-  const availableManufacturers = useMemo(() => {
-    return Array.from(new Set(rideOptions.filter((o) => o.year === year).map((o) => o.manufacturer)))
-  }, [year])
-
-  const availableBrands = useMemo(() => {
-    return Array.from(new Set(rideOptions.filter((o) => o.year === year && o.manufacturer === manufacturer).map((o) => o.brand)))
-  }, [year, manufacturer])
-
-  const availableModels = useMemo(() => {
-    return Array.from(new Set(rideOptions.filter((o) => o.year === year && o.manufacturer === manufacturer && o.brand === brand).map((o) => o.model)))
-  }, [year, manufacturer, brand])
-
-  const availableVersions = useMemo(() => {
-    return rideOptions
-      .filter((o) => o.year === year && o.manufacturer === manufacturer && o.brand === brand && o.model === model)
-      .map((o) => o.version)
-  }, [year, manufacturer, brand, model])
+  const manufacturer = 'MOPAR'
+  const brand = 'DODGE'
+  const model = 'CHALLENGER'
+  const [version, setVersion] = useState(versionsByYear[2023][0])
 
   function changeYear(value: string) {
-    const newYear = Number(value)
-    const first = rideOptions.find((o) => o.year === newYear)
-
-    setYear(newYear)
-    setManufacturer(first?.manufacturer || '')
-    setBrand(first?.brand || '')
-    setModel(first?.model || '')
-    setVersion(first?.version || '')
-  }
-
-  function changeManufacturer(value: string) {
-    const first = rideOptions.find((o) => o.year === year && o.manufacturer === value)
-
-    setManufacturer(value)
-    setBrand(first?.brand || '')
-    setModel(first?.model || '')
-    setVersion(first?.version || '')
-  }
-
-  function changeBrand(value: string) {
-    const first = rideOptions.find((o) => o.year === year && o.manufacturer === manufacturer && o.brand === value)
-
-    setBrand(value)
-    setModel(first?.model || '')
-    setVersion(first?.version || '')
-  }
-
-  function changeModel(value: string) {
-    const first = rideOptions.find((o) => o.year === year && o.manufacturer === manufacturer && o.brand === brand && o.model === value)
-
-    setModel(value)
-    setVersion(first?.version || '')
+    const selectedYear = Number(value)
+    setYear(selectedYear)
+    setVersion(versionsByYear[selectedYear][0])
   }
 
   return (
@@ -152,38 +97,26 @@ export default function NewRidePage() {
 
         <select
           value={manufacturer}
-          onChange={(e) => changeManufacturer(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          disabled
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
         >
-          {availableManufacturers.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          <option value="MOPAR">MOPAR</option>
         </select>
 
         <select
           value={brand}
-          onChange={(e) => changeBrand(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          disabled
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
         >
-          {availableBrands.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          <option value="DODGE">DODGE</option>
         </select>
 
         <select
           value={model}
-          onChange={(e) => changeModel(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          disabled
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
         >
-          {availableModels.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          <option value="CHALLENGER">CHALLENGER</option>
         </select>
 
         <select
@@ -191,7 +124,7 @@ export default function NewRidePage() {
           onChange={(e) => setVersion(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
         >
-          {availableVersions.map((option) => (
+          {versionsByYear[year].map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
