@@ -1,77 +1,141 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 
 const years = [2018, 2019, 2020, 2021, 2022, 2023]
 
-const versionsByYear: Record<number, string[]> = {
-  2018: [
-    'R/T 5.7',
-    'R/T ScatPack 6.4',
-    'SRT 392 6.4',
-    'SRT HellCat 6.2',
-    'SRT HellCat WideBody 6.2',
-    'SRT Demon 6.2',
-  ],
-  2019: [
-    'R/T 5.7',
-    'R/T ScatPack 6.4',
-    'R/T ScatPack WideBody 6.4',
-    'SRT HellCat 6.2',
-    'SRT HellCat WideBody 6.2',
-    'SRT HellCat RedEye 6.2',
-  ],
-  2020: [
-    'R/T 5.7',
-    'R/T ScatPack 6.4',
-    'R/T ScatPack WideBody 6.4',
-    'SRT HellCat 6.2',
-    'SRT HellCat WideBody 6.2',
-    'SRT HellCat RedEye 6.2',
-    'SRT SuperStock 6.2',
-  ],
-  2021: [
-    'R/T 5.7',
-    'R/T ScatPack 6.4',
-    'R/T ScatPack WideBody 6.4',
-    'SRT HellCat 6.2',
-    'SRT HellCat WideBody 6.2',
-    'SRT HellCat RedEye 6.2',
-    'SRT SuperStock 6.2',
-  ],
-  2022: [
-    'R/T 5.7',
-    'R/T ScatPack 6.4',
-    'R/T ScatPack WideBody 6.4',
-    'SRT HellCat 6.2',
-    'SRT HellCat WideBody 6.2',
-    'SRT HellCat RedEye 6.2',
-    'SRT SuperStock 6.2',
-  ],
-  2023: [
-    'R/T 5.7',
-    'R/T ScatPack 6.4',
-    'R/T ScatPack WideBody 6.4',
-    'SRT HellCat 6.2',
-    'SRT HellCat WideBody 6.2',
-    'SRT HellCat RedEye 6.2',
-    'SRT SuperStock 6.2',
-    'SRT Demon 170 6.2',
-  ],
+const models = ['CHALLENGER', 'CHARGER']
+
+const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
+  CHALLENGER: {
+    2018: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'SRT 392 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT Demon 6.2',
+    ],
+    2019: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+    ],
+    2020: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2021: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2022: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2023: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+      'SRT Demon 170 6.2',
+    ],
+  },
+
+  CHARGER: {
+    2018: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'SRT 392 6.4',
+      'SRT HellCat 6.2',
+    ],
+    2019: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+    ],
+    2020: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+    ],
+    2021: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+    ],
+    2022: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+    ],
+    2023: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'King Daytona 6.2',
+    ],
+  },
 }
 
 export default function NewRidePage() {
   const [year, setYear] = useState(2023)
+
   const manufacturer = 'MOPAR'
   const brand = 'DODGE'
-  const model = 'CHALLENGER'
-  const [version, setVersion] = useState(versionsByYear[2023][0])
+
+  const [model, setModel] = useState('CHALLENGER')
+
+  const [version, setVersion] = useState(
+    versionsByModelAndYear.CHALLENGER[2023][0]
+  )
+
+  useEffect(() => {
+    setVersion(
+      versionsByModelAndYear[model][year][0]
+    )
+  }, [year, model])
 
   function changeYear(value: string) {
-    const selectedYear = Number(value)
-    setYear(selectedYear)
-    setVersion(versionsByYear[selectedYear][0])
+    setYear(Number(value))
+  }
+
+  function changeModel(value: string) {
+    setModel(value)
   }
 
   return (
@@ -100,7 +164,7 @@ export default function NewRidePage() {
           disabled
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
         >
-          <option value="MOPAR">MOPAR</option>
+          <option>MOPAR</option>
         </select>
 
         <select
@@ -108,15 +172,19 @@ export default function NewRidePage() {
           disabled
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
         >
-          <option value="DODGE">DODGE</option>
+          <option>DODGE</option>
         </select>
 
         <select
           value={model}
-          disabled
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl opacity-100"
+          onChange={(e) => changeModel(e.target.value)}
+          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
         >
-          <option value="CHALLENGER">CHALLENGER</option>
+          {models.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
         </select>
 
         <select
@@ -124,7 +192,7 @@ export default function NewRidePage() {
           onChange={(e) => setVersion(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
         >
-          {versionsByYear[year].map((option) => (
+          {versionsByModelAndYear[model][year].map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
@@ -135,7 +203,10 @@ export default function NewRidePage() {
           SAVE RIDE
         </button>
 
-        <a href="/rides" className="text-gray-400 text-xl">
+        <a
+          href="/rides"
+          className="text-gray-400 text-xl"
+        >
           Cancel
         </a>
       </div>
