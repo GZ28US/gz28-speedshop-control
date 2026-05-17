@@ -184,6 +184,30 @@ export default function EditRidePage() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    if (loading) return
+    const available = manufacturersByYear[year] || []
+    if (!available.includes(manufacturer)) setManufacturer(available[0] || '')
+  }, [year])
+
+  useEffect(() => {
+    if (loading) return
+    const available = brandsByManufacturerAndYear[manufacturer]?.[year] || []
+    if (!available.includes(brand)) setBrand(available[0] || '')
+  }, [year, manufacturer])
+
+  useEffect(() => {
+    if (loading) return
+    const available = modelsByBrandAndYear[brand]?.[year] || []
+    if (!available.includes(model)) setModel(available[0] || '')
+  }, [year, brand])
+
+  useEffect(() => {
+    if (loading) return
+    const available = versionsByModelAndYear[model]?.[year] || []
+    if (!available.includes(version)) setVersion(available[0] || '')
+  }, [year, model])
+
   const availableManufacturers = manufacturersByYear[year] || []
   const availableBrands = brandsByManufacturerAndYear[manufacturer]?.[year] || []
   const availableModels = modelsByBrandAndYear[brand]?.[year] || []
