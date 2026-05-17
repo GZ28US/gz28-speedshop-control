@@ -133,16 +133,16 @@ export const specialEditions: Record<string, string[]> = {
   '2019-CHALLENGER-R/T ScatPack 6.4': ['None', '1320'],
   '2023-CHALLENGER-R/T ScatPack 6.4': ['None', 'Swinger', 'Shakedown', 'Mopar Edition', 'T/A', 'Shaker'],
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4': ['None', 'Swinger', 'Shakedown', 'Mopar Edition', 'T/A', 'Shaker'],
-  '2023-CHALLENGER-SRT HellCat 6.2': ['None', 'Black Ghost', 'Jailbreak'],
-  '2023-CHALLENGER-SRT HellCat WideBody 6.2': ['None', 'Black Ghost', 'Jailbreak'],
-  '2023-CHALLENGER-SRT HellCat RedEye 6.2': ['None', 'Jailbreak'],
-  '2023-CHALLENGER-SRT HellCat RedEye WideBody 6.2': ['None', 'Jailbreak'],
+  '2023-CHALLENGER-SRT HellCat 6.2': ['None', 'Black Ghost', 'JailBreak'],
+  '2023-CHALLENGER-SRT HellCat WideBody 6.2': ['None', 'Black Ghost', 'JailBreak'],
+  '2023-CHALLENGER-SRT HellCat RedEye 6.2': ['None', 'JailBreak'],
+  '2023-CHALLENGER-SRT HellCat RedEye WideBody 6.2': ['None', 'JailBreak'],
   '2023-CHARGER-ScatPack 6.4': ['None', 'Super Bee'],
   '2023-CHARGER-ScatPack WideBody 6.4': ['None', 'Super Bee'],
-  '2023-CHARGER-SRT HellCat RedEye 6.2': ['None', 'King Daytona', 'Daytona', 'Jailbreak'],
-  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': ['None', 'King Daytona', 'Daytona', 'Jailbreak'],
+  '2023-CHARGER-SRT HellCat RedEye 6.2': ['None', 'King Daytona', 'Daytona', 'JailBreak'],
+  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': ['None', 'King Daytona', 'Daytona', 'JailBreak'],
   '2025-DURANGO-SRT HellCat 6.2': ['None', 'Silver Bullet', 'Hammerhead', 'Brass Monkey'],
-  '2026-DURANGO-SRT HellCat 6.2': ['None', 'Jailbreak'],
+  '2026-DURANGO-SRT HellCat 6.2': ['None', 'JailBreak'],
 }
 
 const moparColors = ['B5 Blue', 'Destroyer Gray', 'F8 Green', 'Frostbite', 'Go Mango', 'Granite', 'Octane Red', 'Pitch Black', 'Plum Crazy', 'Sinamon Stick', 'Sublime', 'TorRed', 'Triple Nickel', 'White Knuckle']
@@ -152,7 +152,7 @@ const corvetteColors = ['Accelerate Yellow', 'Arctic White', 'Black', 'Ceramic M
 const fordColors = ['Agate Black', 'Oxford White', 'Star White', 'Rapid Red', 'Antimatter Blue', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver', 'Velocity Blue', 'Lead Foot', 'Magma Red', 'Shadow Black']
 const durangoColors = ['Billet Silver', 'DB Black', 'Destroyer Gray', 'F8 Green', 'Granite Crystal', 'In-Violet', 'Octane Red', 'Reactor Blue', 'Redline', 'Vice White', 'White Knuckle']
 const durangoColors2026 = ['Destroyer Gray', 'Diamond Black', 'Octane Red', 'Vapor Gray', 'White Knuckle']
-const durangoColors2026Jailbreak = ['Destroyer Gray', 'Diamond Black', 'Green Machine', 'Octane Red', 'Vapor Gray', 'White Knuckle']
+const durangoColors2026JailBreak = ['Destroyer Gray', 'Diamond Black', 'Green Machine', 'Octane Red', 'Vapor Gray', 'White Knuckle']
 
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
@@ -166,7 +166,7 @@ const colorsByConfiguration: Record<string, string[]> = {
   '2025-DURANGO-SRT HellCat 6.2-Hammerhead': ['Hammerhead Gray'],
   '2025-DURANGO-SRT HellCat 6.2-Brass Monkey': ['Red Oxide'],
   '2026-DURANGO-SRT HellCat 6.2-None': durangoColors2026,
-  '2026-DURANGO-SRT HellCat 6.2-Jailbreak': durangoColors2026Jailbreak,
+  '2026-DURANGO-SRT HellCat 6.2-JailBreak': durangoColors2026JailBreak,
 }
 
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
