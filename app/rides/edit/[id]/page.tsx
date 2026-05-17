@@ -19,6 +19,8 @@ type Client = {
   name: string
 }
 
+const allManufacturers = ['MOPAR', 'GM', 'FORD', 'PROTOTYPE']
+
 export default function EditRidePage() {
   const params = useParams()
   const router = useRouter()
@@ -38,6 +40,8 @@ export default function EditRidePage() {
   const [version, setVersion] = useState('')
   const [specialEdition, setSpecialEdition] = useState('None')
   const [color, setColor] = useState('')
+
+  const isPrototype = manufacturer === 'PROTOTYPE'
 
   useEffect(() => {
     loadClients()
@@ -78,25 +82,25 @@ export default function EditRidePage() {
   }
 
   useEffect(() => {
-    if (loading) return
+    if (loading || isPrototype) return
     const available = manufacturersByYear[year] || []
     if (!available.includes(manufacturer)) setManufacturer(available[0] || '')
   }, [year])
 
   useEffect(() => {
-    if (loading) return
+    if (loading || isPrototype) return
     const available = brandsByManufacturerAndYear[manufacturer]?.[year] || []
     if (!available.includes(brand)) setBrand(available[0] || '')
   }, [year, manufacturer])
 
   useEffect(() => {
-    if (loading) return
+    if (loading || isPrototype) return
     const available = modelsByBrandAndYear[brand]?.[year] || []
     if (!available.includes(model)) setModel(available[0] || '')
   }, [year, brand])
 
   useEffect(() => {
-    if (loading) return
+    if (loading || isPrototype) return
     const available = versionsByModelAndYear[model]?.[year] || []
     if (!available.includes(version)) setVersion(available[0] || '')
   }, [year, model])
@@ -108,15 +112,15 @@ export default function EditRidePage() {
         client_id: clientId || null,
         project_code: projectCode,
         project_name: projectName,
-        vin,
-        plate,
-        year,
         manufacturer,
-        brand,
-        model,
-        version,
-        special_edition: specialEdition === 'None' ? null : specialEdition,
-        color,
+        year: isPrototype ? null : year,
+        brand: isPrototype ? null : brand,
+        model: isPrototype ? null : model,
+        version: isPrototype ? null : version,
+        special_edition: isPrototype ? null : (specialEdition === 'None' ? null : specialEdition),
+        color: isPrototype ? null : color,
+        vin: isPrototype ? null : vin,
+        plate: isPrototype ? null : plate,
         updated_at: new Date().toISOString(),
       })
       .eq('id', rideId)
@@ -129,15 +133,14 @@ export default function EditRidePage() {
     router.push('/rides')
   }
 
-  const selectClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
-  const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
-
-  const availableManufacturers = manufacturersByYear[year] || []
   const availableBrands = brandsByManufacturerAndYear[manufacturer]?.[year] || []
   const availableModels = modelsByBrandAndYear[brand]?.[year] || []
   const availableVersions = versionsByModelAndYear[model]?.[year] || []
   const availableSpecialEditions = specialEditions[`${year}-${model}-${version}`] || []
   const availableColors = getAvailableColors(year, brand, model, version, specialEdition)
+
+  const selectClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
+  const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
 
   if (loading) {
     return (
@@ -175,65 +178,69 @@ export default function EditRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">VIN</label>
-          <input value={vin} onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">PLATE</label>
-          <input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">YEAR</label>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={selectClass}>
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-        </div>
-
-        <div>
           <label className="block mb-2 text-lg font-bold">MANUFACTURER</label>
           <select value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} className={selectClass}>
-            {availableManufacturers.map((o) => <option key={o} value={o}>{o}</option>)}
+            {allManufacturers.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">BRAND</label>
-          <select value={brand} onChange={(e) => setBrand(e.target.value)} className={selectClass}>
-            {availableBrands.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
+        {!isPrototype && (
+          <>
+            <div>
+              <label className="block mb-2 text-lg font-bold">VIN</label>
+              <input value={vin} onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
+            </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">MODEL</label>
-          <select value={model} onChange={(e) => setModel(e.target.value)} className={selectClass}>
-            {availableModels.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
+            <div>
+              <label className="block mb-2 text-lg font-bold">PLATE</label>
+              <input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
+            </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">VERSION</label>
-          <select value={version} onChange={(e) => setVersion(e.target.value)} className={selectClass}>
-            {availableVersions.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
+            <div>
+              <label className="block mb-2 text-lg font-bold">YEAR</label>
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={selectClass}>
+                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
 
-        {availableSpecialEditions.length > 0 && (
-          <div>
-            <label className="block mb-2 text-lg font-bold">SPECIAL EDITION</label>
-            <select value={specialEdition} onChange={(e) => setSpecialEdition(e.target.value)} className={selectClass}>
-              {availableSpecialEditions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
+            <div>
+              <label className="block mb-2 text-lg font-bold">BRAND</label>
+              <select value={brand} onChange={(e) => setBrand(e.target.value)} className={selectClass}>
+                {availableBrands.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-2 text-lg font-bold">MODEL</label>
+              <select value={model} onChange={(e) => setModel(e.target.value)} className={selectClass}>
+                {availableModels.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-2 text-lg font-bold">VERSION</label>
+              <select value={version} onChange={(e) => setVersion(e.target.value)} className={selectClass}>
+                {availableVersions.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+
+            {availableSpecialEditions.length > 0 && (
+              <div>
+                <label className="block mb-2 text-lg font-bold">SPECIAL EDITION</label>
+                <select value={specialEdition} onChange={(e) => setSpecialEdition(e.target.value)} className={selectClass}>
+                  {availableSpecialEditions.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block mb-2 text-lg font-bold">COLOR</label>
+              <select value={color} onChange={(e) => setColor(e.target.value)} className={selectClass}>
+                {availableColors.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </>
         )}
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">COLOR</label>
-          <select value={color} onChange={(e) => setColor(e.target.value)} className={selectClass}>
-            {availableColors.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
 
         <button onClick={saveRide} className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">
           SAVE CHANGES
