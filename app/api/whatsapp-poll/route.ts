@@ -59,6 +59,7 @@ function getReceiptFileUrl(message: any) {
 
 function isBotMessage(body: string) {
   return [
+    'Transaction date is today?',
     'Today?',
     'Day?',
     'Month?',
@@ -252,7 +253,7 @@ export async function GET() {
     const send = await sendMessage(
       isReceiptTrigger
         ? 'Receipt attached ✅\nToday? YES or NO'
-        : 'Today? YES or NO'
+        : 'Transaction date is today? Reply YES or NO'
     )
 
     await markProcessed(messageId)
