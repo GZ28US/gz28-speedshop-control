@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 
+type Client = {
+  id: string
+  name: string
+}
+
 const years = [2023]
 
 const models = ['CHALLENGER', 'CHARGER']
@@ -141,6 +146,9 @@ const colorsByConfiguration: Record<string, string[]> = {
 export default function NewRidePage() {
   const router = useRouter()
 
+  const [clients, setClients] = useState<Client[]>([])
+  const [clientId, setClientId] = useState('')
+
   const [projectCode, setProjectCode] = useState('US.001')
   const [projectName, setProjectName] = useState('')
 
@@ -178,36 +186,50 @@ export default function NewRidePage() {
   )
 
   useEffect(() => {
-    async function loadNextProjectCode() {
-      const { data } = await supabase
-        .from('rides')
-        .select('project_code')
-
-      const usedNumbers =
-        data?.map((item) => {
-          const match =
-            item.project_code?.match(/US\.(\d+)/)
-
-          return match
-            ? Number(match[1])
-            : null
-        }) || []
-
-      let nextNumber = 1
-
-      while (
-        usedNumbers.includes(nextNumber)
-      ) {
-        nextNumber++
-      }
-
-      setProjectCode(
-        `US.${String(nextNumber).padStart(3, '0')}`
-      )
-    }
-
+    loadClients()
     loadNextProjectCode()
   }, [])
+
+  async function loadClients() {
+    const { data } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name', { ascending: true })
+
+    setClients(data || [])
+
+    if (data && data.length > 0) {
+      setClientId(data[0].id)
+    }
+  }
+
+  async function loadNextProjectCode() {
+    const { data } = await supabase
+      .from('rides')
+      .select('project_code')
+
+    const usedNumbers =
+      data?.map((item) => {
+        const match =
+          item.project_code?.match(/US\.(\d+)/)
+
+        return match
+          ? Number(match[1])
+          : null
+      }) || []
+
+    let nextNumber = 1
+
+    while (
+      usedNumbers.includes(nextNumber)
+    ) {
+      nextNumber++
+    }
+
+    setProjectCode(
+      `US.${String(nextNumber).padStart(3, '0')}`
+    )
+  }
 
   useEffect(() => {
     setVersion(
@@ -238,15 +260,12 @@ export default function NewRidePage() {
     setColor(colors[0])
   }, [year, model, version, specialEdition])
 
-  function changeModel(value: string) {
-    setModel(value)
-  }
-
   async function saveRide() {
     const { error } = await supabase
       .from('rides')
       .insert([
         {
+          client_id: clientId,
           project_code: projectCode,
           project_name: projectName,
           year,
@@ -281,6 +300,29 @@ export default function NewRidePage() {
       </h2>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            CLIENT
+          </label>
+
+          <select
+            value={clientId}
+            onChange={(e) =>
+              setClientId(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {clients.map((client) => (
+              <option
+                key={client.id}
+                value={client.id}
+              >
+                {client.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block mb-2 text-lg font-bold">
             PROJECT CODE
@@ -396,7 +438,7 @@ export default function NewRidePage() {
           <select
             value={model}
             onChange={(e) =>
-              changeModel(e.target.value)
+              setModel(e.target.value)
             }
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
