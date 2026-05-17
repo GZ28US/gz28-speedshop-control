@@ -65,7 +65,10 @@ export default function NewClientPage() {
     window.location.href = '/clients'
   }
 
-  const stateOptions = form.country === 'USA' ? usaStates : brazilStates
+  const stateOptions =
+    form.country === 'USA'
+      ? usaStates
+      : brazilStates
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -108,7 +111,11 @@ export default function NewClientPage() {
         </select>
 
         <input
-          placeholder="PHONE"
+          placeholder={
+            form.country === 'USA'
+              ? '+1 (407) 123-4567'
+              : '+55 (62) 99999-9999'
+          }
           value={form.phone}
           onChange={(e) =>
             setForm({

@@ -148,7 +148,11 @@ export default function EditClientPage({
         </select>
 
         <input
-          placeholder="PHONE"
+          placeholder={
+            form.country === 'USA'
+              ? '+1 (407) 123-4567'
+              : '+55 (62) 99999-9999'
+          }
           value={form.phone}
           onChange={(e) =>
             setForm({
