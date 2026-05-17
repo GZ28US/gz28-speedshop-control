@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 
@@ -18,8 +19,9 @@ const brazilStates = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ]
 
-export default function EditClientPage(props: any) {
-  const id = props.params?.id
+export default function EditClientPage() {
+  const params = useParams()
+  const id = String(params.id || '')
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -37,17 +39,17 @@ export default function EditClientPage(props: any) {
 
   useEffect(() => {
     if (id) {
-      loadClient()
+      loadClient(id)
     }
   }, [id])
 
-  async function loadClient() {
+  async function loadClient(clientId: string) {
     setLoading(true)
 
     const { data, error } = await supabase
       .from('clients')
       .select('*')
-      .eq('id', id)
+      .eq('id', clientId)
       .maybeSingle()
 
     if (error) {
