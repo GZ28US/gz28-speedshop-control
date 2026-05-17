@@ -36,7 +36,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
   },
 }
 
-const specialEditions: Record<string, string[]>> = {
+const specialEditions: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4': [
     'None',
     'Swinger',
@@ -144,7 +144,7 @@ export default function NewRidePage() {
   const [vin, setVin] = useState('')
   const [plate, setPlate] = useState('')
 
-  const [year, setYear] = useState(2023)
+  const [year] = useState(2023)
 
   const manufacturer = 'MOPAR'
   const brand = 'DODGE'
