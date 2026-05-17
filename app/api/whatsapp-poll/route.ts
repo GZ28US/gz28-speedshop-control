@@ -66,7 +66,7 @@ function isBotMessage(body: string) {
     'Year?',
     'Amount?',
     'Receipt attached',
-    'Please reply YES or NO.',
+    'Please reply Y or N.',
     'Invalid day.',
     'Invalid month.',
     'Invalid year.',
@@ -254,8 +254,8 @@ export async function GET() {
 
     const send = await sendMessage(
       isReceiptTrigger
-        ? 'Receipt attached ✅\nTransaction date is today? Reply YES or NO'
-        : 'Transaction date is today? Reply YES or NO'
+        ? 'Receipt attached ✅\nTransaction date is today? Reply Y or N'
+        : 'Transaction date is today? Reply Y or N'
     )
 
     await markProcessed(messageId)
@@ -285,7 +285,7 @@ export async function GET() {
   }
 
   if (session.current_step === 'today_question') {
-    if (normalizedText === 'yes') {
+    if (normalizedText === 'y') {
       await supabase
         .from('whatsapp_expense_sessions')
         .update({
@@ -304,7 +304,7 @@ export async function GET() {
       })
     }
 
-    if (normalizedText === 'no') {
+    if (normalizedText === 'n') {
       await supabase
         .from('whatsapp_expense_sessions')
         .update({
@@ -322,7 +322,7 @@ export async function GET() {
       })
     }
 
-    const send = await sendMessage('Please reply YES or NO.')
+    const send = await sendMessage('Please reply Y or N.')
     await markProcessed(messageId)
 
     return NextResponse.json({
