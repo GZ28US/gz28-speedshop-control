@@ -18,11 +18,9 @@ const brazilStates = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ]
 
-export default function EditClientPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default function EditClientPage(props: any) {
+  const id = props.params?.id
+
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
@@ -38,8 +36,10 @@ export default function EditClientPage({
   })
 
   useEffect(() => {
-    loadClient()
-  }, [])
+    if (id) {
+      loadClient()
+    }
+  }, [id])
 
   async function loadClient() {
     setLoading(true)
@@ -47,7 +47,7 @@ export default function EditClientPage({
     const { data, error } = await supabase
       .from('clients')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .maybeSingle()
 
     if (error) {
@@ -98,7 +98,7 @@ export default function EditClientPage({
         state: form.state,
         zip: form.zip,
       })
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       alert(error.message)
