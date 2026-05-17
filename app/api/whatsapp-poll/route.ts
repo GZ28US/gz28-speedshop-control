@@ -65,6 +65,10 @@ function isBotMessage(body: string) {
     'Year?',
     'Amount?',
     'Receipt attached',
+    'Please reply YES or NO.',
+    'Invalid day.',
+    'Invalid month.',
+    'Invalid year.',
     'Please send a valid amount. Example: USD 150',
     'Choose main category:',
     'Choose subcategory:',
@@ -72,8 +76,11 @@ function isBotMessage(body: string) {
     'Confirm expense:',
     'Expense saved',
     'Expense canceled.',
+    'Please reply YES to save or NO to cancel.',
+    'Please reply YES to save, NO to cancel, or C to cancel.',
     'Invalid option. Please choose a number from the list.',
-  ].some((text) => body.startsWith(text))
+    'Invalid option. Please choose a number from the list, or C to cancel.',
+  ].some((botText) => body.startsWith(botText))
 }
 
 async function wasProcessed(messageId: string) {
@@ -125,6 +132,24 @@ function menuWithCancel(title: string, items: any[]) {
     `${title}\n` +
     items.map((c, i) => `${i}. ${c.name}`).join('\n') +
     '\n\nC. CANCEL'
+  )
+}
+
+function todayDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function buildDate(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function isValidDate(year: number, month: number, day: number) {
+  const date = new Date(`${buildDate(year, month, day)}T00:00:00Z`)
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
   )
 }
 
@@ -213,6 +238,7 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         message: 'Message ignored',
+        body: text,
       })
     }
 
@@ -233,7 +259,10 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: 'Started expense flow',
+      message: isReceiptTrigger
+        ? 'Started expense flow from receipt file'
+        : 'Started expense flow',
+      receipt_file_url: receiptFileUrl,
       sent: send,
     })
   }
@@ -251,6 +280,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       message: 'Receipt attached silently',
+      receipt_file_url: receiptFileUrl,
     })
   }
 
@@ -259,13 +289,12 @@ export async function GET() {
       await supabase
         .from('whatsapp_expense_sessions')
         .update({
-          transaction_date: new Date().toISOString().slice(0, 10),
+          transaction_date: todayDate(),
           current_step: 'amount',
         })
         .eq('id', session.id)
 
       const send = await sendMessage('Amount?')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -284,7 +313,6 @@ export async function GET() {
         .eq('id', session.id)
 
       const send = await sendMessage('Day?')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
@@ -295,12 +323,12 @@ export async function GET() {
     }
 
     const send = await sendMessage('Please reply YES or NO.')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
       success: true,
       message: 'Waiting today confirmation',
+      body: text,
       sent: send,
     })
   }
@@ -308,14 +336,15 @@ export async function GET() {
   if (session.current_step === 'custom_day') {
     const day = Number(text)
 
-    if (!day || day < 1 || day > 31) {
+    if (!Number.isInteger(day) || day < 1 || day > 31) {
       const send = await sendMessage('Invalid day. Please send a number between 1 and 31.')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
         message: 'Invalid day',
+        body: text,
+        sent: send,
       })
     }
 
@@ -328,7 +357,6 @@ export async function GET() {
       .eq('id', session.id)
 
     const send = await sendMessage('Month?')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -341,14 +369,15 @@ export async function GET() {
   if (session.current_step === 'custom_month') {
     const month = Number(text)
 
-    if (!month || month < 1 || month > 12) {
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
       const send = await sendMessage('Invalid month. Please send a number between 1 and 12.')
-
       await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
         message: 'Invalid month',
+        body: text,
+        sent: send,
       })
     }
 
@@ -361,7 +390,6 @@ export async function GET() {
       .eq('id', session.id)
 
     const send = await sendMessage('Year?')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -373,20 +401,33 @@ export async function GET() {
 
   if (session.current_step === 'custom_year') {
     const year = Number(text)
+    const day = Number(session.transaction_day)
+    const month = Number(session.transaction_month)
 
-    if (!year || year < 2020 || year > 2100) {
-      const send = await sendMessage('Invalid year.')
-
+    if (!Number.isInteger(year) || year < 2020 || year > 2100) {
+      const send = await sendMessage('Invalid year. Please send a valid year.')
       await markProcessed(messageId)
 
       return NextResponse.json({
         success: true,
         message: 'Invalid year',
+        body: text,
+        sent: send,
       })
     }
 
-    const finalDate =
-      `${year}-${String(session.transaction_month).padStart(2, '0')}-${String(session.transaction_day).padStart(2, '0')}`
+    if (!isValidDate(year, month, day)) {
+      const send = await sendMessage('Invalid date. Please cancel with C and start again.')
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid full date',
+        sent: send,
+      })
+    }
+
+    const finalDate = buildDate(year, month, day)
 
     await supabase
       .from('whatsapp_expense_sessions')
@@ -398,7 +439,6 @@ export async function GET() {
       .eq('id', session.id)
 
     const send = await sendMessage('Amount?')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
@@ -408,12 +448,285 @@ export async function GET() {
     })
   }
 
-  // KEEP THE REST OF YOUR FILE EXACTLY AS IT ALREADY IS
-  // STARTING FROM:
-  // if (session.current_step === 'amount') {
+  if (session.current_step === 'amount') {
+    if (normalizedText === 'expense') {
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Ignored duplicate EXPENSE trigger while waiting for amount',
+      })
+    }
+
+    const amount = parseAmount(text)
+
+    if (!amount) {
+      const send = await sendMessage(
+        'Please send a valid amount. Example: USD 150'
+      )
+
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid amount',
+        body: text,
+        sent: send,
+      })
+    }
+
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        amount,
+        current_step: 'main_category',
+      })
+      .eq('id', session.id)
+
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name, code')
+      .eq('type', 'expense')
+      .is('parent_id', null)
+      .order('code')
+
+    const send = await sendMessage(
+      menuWithCancel('Choose main category:', categories || [])
+    )
+
+    await markProcessed(messageId)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked category',
+      sent: send,
+    })
+  }
+
+  if (session.current_step === 'main_category') {
+    const choice = Number(text)
+
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name, code')
+      .eq('type', 'expense')
+      .is('parent_id', null)
+      .order('code')
+
+    const selected = categories?.[choice]
+
+    if (!selected) {
+      const send = await sendMessage(
+        'Invalid option. Please choose a number from the list, or C to cancel.'
+      )
+
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid main category',
+        body: text,
+        sent: send,
+      })
+    }
+
+    const children = await getChildren(selected.id)
+    const selectedPath = selected.name
+
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        selected_category_id: selected.id,
+        selected_category_path: selectedPath,
+        current_step: children.length > 0 ? 'subcategory' : 'description',
+      })
+      .eq('id', session.id)
+
+    if (children.length > 0) {
+      const send = await sendMessage(
+        menuWithCancel('Choose subcategory:', children)
+      )
+
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Asked subcategory',
+        sent: send,
+      })
+    }
+
+    const send = await sendMessage('Description?')
+    await markProcessed(messageId)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked description',
+      sent: send,
+    })
+  }
+
+  if (session.current_step === 'subcategory') {
+    const choice = Number(text)
+
+    const subcategories = await getChildren(session.selected_category_id)
+
+    const selected = subcategories?.[choice]
+
+    if (!selected) {
+      const send = await sendMessage(
+        'Invalid option. Please choose a number from the list, or C to cancel.'
+      )
+
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invalid subcategory',
+        body: text,
+        sent: send,
+      })
+    }
+
+    const previousPath = session.selected_category_path || ''
+    const selectedPath = previousPath
+      ? `${previousPath} > ${selected.name}`
+      : selected.name
+
+    const children = await getChildren(selected.id)
+
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        selected_category_id: selected.id,
+        selected_category_path: selectedPath,
+        current_step: children.length > 0 ? 'subcategory' : 'description',
+      })
+      .eq('id', session.id)
+
+    if (children.length > 0) {
+      const send = await sendMessage(
+        menuWithCancel('Choose subcategory:', children)
+      )
+
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Asked nested subcategory',
+        sent: send,
+      })
+    }
+
+    const send = await sendMessage('Description?')
+    await markProcessed(messageId)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked description',
+      sent: send,
+    })
+  }
+
+  if (session.current_step === 'description') {
+    await supabase
+      .from('whatsapp_expense_sessions')
+      .update({
+        description: text,
+        current_step: 'confirm',
+      })
+      .eq('id', session.id)
+
+    const { data: category } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('id', session.selected_category_id)
+      .single()
+
+    const categoryText =
+      session.selected_category_path ||
+      category?.name ||
+      'Uncategorized'
+
+    const receiptLine = session.receipt_file_url
+      ? `Receipt: Attached ✅\n`
+      : ''
+
+    const dateLine = session.transaction_date
+      ? `Date: ${session.transaction_date}\n`
+      : ''
+
+    const send = await sendMessage(
+      `Confirm expense:\n` +
+      `Amount: USD ${session.amount}\n` +
+      dateLine +
+      `Category: ${categoryText}\n` +
+      receiptLine +
+      `Description: ${text}\n\n` +
+      `Reply YES to save, NO to cancel, or C to cancel.`
+    )
+
+    await markProcessed(messageId)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Asked confirmation',
+      sent: send,
+    })
+  }
+
+  if (session.current_step === 'confirm') {
+    if (normalizedText === 'yes') {
+      await supabase.from('transactions').insert({
+        type: 'expense',
+        amount: session.amount,
+        description: session.description,
+        category_id: session.selected_category_id,
+        category_path: session.selected_category_path,
+        receipt_file_url: session.receipt_file_url,
+        source: 'whatsapp-group-polling',
+        transaction_date: session.transaction_date || todayDate(),
+      })
+
+      await supabase
+        .from('whatsapp_expense_sessions')
+        .update({
+          is_completed: true,
+        })
+        .eq('id', session.id)
+
+      const send = await sendMessage('Expense saved ✅')
+      await markProcessed(messageId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Expense saved',
+        sent: send,
+      })
+    }
+
+    if (normalizedText === 'no') {
+      return await cancelSession(session.id, messageId)
+    }
+
+    const send = await sendMessage(
+      'Please reply YES to save, NO to cancel, or C to cancel.'
+    )
+
+    await markProcessed(messageId)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Waiting confirmation',
+      body: text,
+      sent: send,
+    })
+  }
+
+  await markProcessed(messageId)
 
   return NextResponse.json({
     success: true,
-    message: 'Continue with existing flow below',
+    message: 'No action',
   })
 }
