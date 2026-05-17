@@ -31,9 +31,9 @@ const manufacturersByYear: Record<number, string[]> = {
   2021: ['MOPAR', 'GM', 'FORD'],
   2022: ['MOPAR', 'GM', 'FORD'],
   2023: ['MOPAR', 'GM', 'FORD'],
-  2024: ['GM', 'FORD'],
-  2025: ['GM'],
-  2026: ['GM'],
+  2024: ['MOPAR', 'GM', 'FORD'],
+  2025: ['MOPAR', 'GM'],
+  2026: ['MOPAR', 'GM'],
 }
 
 const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
@@ -41,6 +41,7 @@ const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
     2009: ['RAM'], 2010: ['RAM'], 2011: ['RAM'], 2012: ['RAM'], 2013: ['RAM'],
     2014: ['RAM'], 2015: ['RAM'], 2016: ['RAM'], 2017: ['RAM'], 2018: ['DODGE', 'RAM'],
     2019: ['DODGE'], 2020: ['DODGE'], 2021: ['DODGE'], 2022: ['DODGE'], 2023: ['DODGE'],
+    2024: ['DODGE'], 2025: ['DODGE'], 2026: ['DODGE'],
   },
   GM: {
     2014: ['CHEVROLET'], 2015: ['CHEVROLET'], 2016: ['CHEVROLET'], 2017: ['CHEVROLET'],
@@ -55,8 +56,15 @@ const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
 
 const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
   DODGE: {
-    2018: ['CHALLENGER', 'CHARGER'], 2019: ['CHALLENGER', 'CHARGER'], 2020: ['CHALLENGER', 'CHARGER'],
-    2021: ['CHALLENGER', 'CHARGER'], 2022: ['CHALLENGER', 'CHARGER'], 2023: ['CHALLENGER', 'CHARGER'],
+    2018: ['CHALLENGER', 'CHARGER'],
+    2019: ['CHALLENGER', 'CHARGER'],
+    2020: ['CHALLENGER', 'CHARGER'],
+    2021: ['CHALLENGER', 'CHARGER', 'DURANGO'],
+    2022: ['CHALLENGER', 'CHARGER'],
+    2023: ['CHALLENGER', 'CHARGER', 'DURANGO'],
+    2024: ['CHALLENGER', 'CHARGER', 'DURANGO'],
+    2025: ['DURANGO'],
+    2026: ['DURANGO'],
   },
   RAM: {
     2009: ['1500'], 2010: ['1500'], 2011: ['1500'], 2012: ['1500'], 2013: ['1500'],
@@ -82,6 +90,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
     2021: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2'],
     2022: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2'],
     2023: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2', 'SRT Demon 170 6.2'],
+    2024: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
   },
   CHARGER: {
     2018: ['R/T 5.7', 'ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2'],
@@ -90,6 +99,14 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
     2021: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
     2022: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
     2023: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2024: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+  },
+  DURANGO: {
+    2021: ['SRT HellCat 6.2'],
+    2023: ['SRT HellCat 6.2'],
+    2024: ['SRT HellCat 6.2'],
+    2025: ['SRT HellCat 6.2', 'SRT HellCat Silver Bullet 6.2', 'SRT HellCat Hammerhead 6.2', 'SRT HellCat Brass Monkey 6.2'],
+    2026: ['SRT HellCat 6.2', 'SRT HellCat Jailbreak 6.2'],
   },
   CAMARO: {
     2016: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2'],
@@ -143,6 +160,9 @@ const ramColors = ['Black', 'Bright White', 'Brilliant Black Crystal', 'Bright S
 const camaroColors = ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Rapid Blue', 'Shadow Gray', 'Sharkskin', 'Vivid Orange', 'Wild Cherry', 'Radiant Red', 'Panther Matte Black']
 const corvetteColors = ['Accelerate Yellow', 'Arctic White', 'Black', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Sea Wolf Gray', 'Silver Flare', 'Torch Red', 'White Pearl']
 const fordColors = ['Agate Black', 'Oxford White', 'Star White', 'Rapid Red', 'Antimatter Blue', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver', 'Velocity Blue', 'Lead Foot', 'Magma Red', 'Shadow Black']
+const durangoColors2021 = ['Billet Silver', 'DB Black', 'Destroyer Gray', 'F8 Green', 'Granite Crystal', 'In-Violet', 'Octane Red', 'Reactor Blue', 'Redline', 'Vice White', 'White Knuckle']
+const durangoColors2026 = ['Destroyer Gray', 'Diamond Black', 'Octane Red', 'Vapor Gray', 'White Knuckle']
+const durangoColors2026Jailbreak = ['Destroyer Gray', 'Diamond Black', 'Green Machine', 'Octane Red', 'Vapor Gray', 'White Knuckle']
 
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
@@ -152,6 +172,24 @@ const colorsByConfiguration: Record<string, string[]> = {
   '2024-CAMARO-Panther Collector Edition LT1 6.2-None': ['Panther Matte Black'],
   '2024-CAMARO-Panther Collector Edition SS 6.2-None': ['Panther Matte Black'],
   '2024-CAMARO-Panther Collector Edition ZL1 6.2-None': ['Panther Matte Black'],
+  '2025-DURANGO-SRT HellCat Silver Bullet 6.2-None': ['Triple Nickel'],
+  '2025-DURANGO-SRT HellCat Hammerhead 6.2-None': ['Hammerhead Gray'],
+  '2025-DURANGO-SRT HellCat Brass Monkey 6.2-None': ['Red Oxide'],
+  '2026-DURANGO-SRT HellCat Jailbreak 6.2-None': durangoColors2026Jailbreak,
+  '2026-DURANGO-SRT HellCat 6.2-None': durangoColors2026,
+}
+
+function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
+  const key = `${year}-${model}-${version}-${specialEdition}`
+  if (colorsByConfiguration[key]) return colorsByConfiguration[key]
+  if (model === 'DURANGO' && (year === 2021 || year === 2023 || year === 2024)) return durangoColors2021
+  if (model === 'DURANGO' && year === 2026) return durangoColors2026
+  if (model === 'DURANGO' && year === 2025) return durangoColors2021
+  if (brand === 'RAM') return ramColors
+  if (model === 'CAMARO') return camaroColors
+  if (model === 'CORVETTE') return corvetteColors
+  if (brand === 'FORD') return fordColors
+  return moparColors
 }
 
 export default function NewRidePage() {
@@ -194,31 +232,23 @@ export default function NewRidePage() {
   }
 
   useEffect(() => {
-    const availableManufacturers = manufacturersByYear[year] || []
-    if (!availableManufacturers.includes(manufacturer)) {
-      setManufacturer(availableManufacturers[0] || '')
-    }
+    const available = manufacturersByYear[year] || []
+    if (!available.includes(manufacturer)) setManufacturer(available[0] || '')
   }, [year, manufacturer])
 
   useEffect(() => {
-    const availableBrands = brandsByManufacturerAndYear[manufacturer]?.[year] || []
-    if (!availableBrands.includes(brand)) {
-      setBrand(availableBrands[0] || '')
-    }
+    const available = brandsByManufacturerAndYear[manufacturer]?.[year] || []
+    if (!available.includes(brand)) setBrand(available[0] || '')
   }, [year, manufacturer, brand])
 
   useEffect(() => {
-    const availableModels = modelsByBrandAndYear[brand]?.[year] || []
-    if (!availableModels.includes(model)) {
-      setModel(availableModels[0] || '')
-    }
+    const available = modelsByBrandAndYear[brand]?.[year] || []
+    if (!available.includes(model)) setModel(available[0] || '')
   }, [year, brand, model])
 
   useEffect(() => {
-    const availableVersions = versionsByModelAndYear[model]?.[year] || []
-    if (!availableVersions.includes(version)) {
-      setVersion(availableVersions[0] || '')
-    }
+    const available = versionsByModelAndYear[model]?.[year] || []
+    if (!available.includes(version)) setVersion(available[0] || '')
   }, [year, model, version])
 
   useEffect(() => {
@@ -228,16 +258,8 @@ export default function NewRidePage() {
   }, [year, model, version])
 
   useEffect(() => {
-    const key = `${year}-${model}-${version}-${specialEdition}`
-    if (colorsByConfiguration[key]) {
-      setColor(colorsByConfiguration[key][0])
-      return
-    }
-    if (brand === 'RAM') setColor(ramColors[0])
-    else if (model === 'CAMARO') setColor(camaroColors[0])
-    else if (model === 'CORVETTE') setColor(corvetteColors[0])
-    else if (brand === 'FORD') setColor(fordColors[0])
-    else setColor(moparColors[0])
+    const colors = getAvailableColors(year, brand, model, version, specialEdition)
+    setColor(colors[0])
   }, [year, brand, model, version, specialEdition])
 
   async function saveRide() {
@@ -269,9 +291,7 @@ export default function NewRidePage() {
   const availableModels = modelsByBrandAndYear[brand]?.[year] || []
   const availableVersions = versionsByModelAndYear[model]?.[year] || []
   const availableSpecialEditions = specialEditions[`${year}-${model}-${version}`] || []
-  const availableColors =
-    colorsByConfiguration[`${year}-${model}-${version}-${specialEdition}`] ||
-    (brand === 'RAM' ? ramColors : model === 'CAMARO' ? camaroColors : model === 'CORVETTE' ? corvetteColors : brand === 'FORD' ? fordColors : moparColors)
+  const availableColors = getAvailableColors(year, brand, model, version, specialEdition)
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
