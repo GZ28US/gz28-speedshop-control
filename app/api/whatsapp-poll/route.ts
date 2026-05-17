@@ -177,6 +177,16 @@ export async function GET() {
   }
 
   const messageId = nextMessage.id
+const alreadyProcessed = await wasProcessed(messageId)
+
+if (alreadyProcessed) {
+  return NextResponse.json({
+    success: true,
+    message: 'Message already processed',
+  })
+}
+
+
   const text = String(nextMessage.body || '').trim()
   const normalizedText = text.toLowerCase()
   const receiptFileUrl = getReceiptFileUrl(nextMessage)
