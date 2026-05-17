@@ -24,6 +24,7 @@ export default function EditClientPage({
   params: { id: string }
 }) {
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
   const [form, setForm] = useState({
     name: '',
@@ -41,13 +42,25 @@ export default function EditClientPage({
   }, [])
 
   async function loadClient() {
-    const { data } = await supabase
+    setLoading(true)
+
+    const { data, error } = await supabase
       .from('clients')
       .select('*')
       .eq('id', params.id)
-      .single()
+      .maybeSingle()
 
-    if (!data) return
+    if (error) {
+      alert(error.message)
+      setLoading(false)
+      return
+    }
+
+    if (!data) {
+      setNotFound(true)
+      setLoading(false)
+      return
+    }
 
     setForm({
       name: data.name || '',
@@ -104,7 +117,26 @@ export default function EditClientPage({
     return (
       <main className="min-h-screen bg-black text-white p-8">
         <Header />
-        Loading...
+        <p className="text-xl text-gray-400">Loading...</p>
+      </main>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <main className="min-h-screen bg-black text-white p-8">
+        <Header />
+
+        <h2 className="text-4xl font-bold mb-8">
+          CLIENT NOT FOUND
+        </h2>
+
+        <a
+          href="/clients"
+          className="text-gray-400 text-xl"
+        >
+          Back to Clients
+        </a>
       </main>
     )
   }
