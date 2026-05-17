@@ -28,6 +28,26 @@ export default function ClientsPage() {
     setClients(data || [])
   }
 
+  async function removeClient(id: string) {
+    const confirmed = confirm(
+      'Are you sure you want to remove this client?'
+    )
+
+    if (!confirmed) return
+
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    loadClients()
+  }
+
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <h1 className="text-5xl font-bold mb-10">
@@ -64,9 +84,25 @@ export default function ClientsPage() {
                 {client.phone}
               </p>
 
-              <p className="text-gray-400">
+              <p className="text-gray-400 mb-5">
                 {client.city} {client.state}
               </p>
+
+              <div className="flex gap-3">
+                <a
+                  href={`/clients/edit/${client.id}`}
+                  className="bg-blue-700 hover:bg-blue-600 px-5 py-3 rounded-2xl font-bold"
+                >
+                  EDIT
+                </a>
+
+                <button
+                  onClick={() => removeClient(client.id)}
+                  className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
+                >
+                  REMOVE
+                </button>
+              </div>
             </div>
           ))
         )}
