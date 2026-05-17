@@ -93,8 +93,8 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2021: ['SRT HellCat 6.2'],
     2023: ['SRT HellCat 6.2'],
     2024: ['SRT HellCat 6.2'],
-    2025: ['SRT HellCat 6.2', 'SRT HellCat Silver Bullet 6.2', 'SRT HellCat Hammerhead 6.2', 'SRT HellCat Brass Monkey 6.2'],
-    2026: ['SRT HellCat 6.2', 'SRT HellCat Jailbreak 6.2'],
+    2025: ['SRT HellCat 6.2'],
+    2026: ['SRT HellCat 6.2'],
   },
   CAMARO: {
     2016: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2'],
@@ -141,6 +141,8 @@ export const specialEditions: Record<string, string[]> = {
   '2023-CHARGER-ScatPack WideBody 6.4': ['None', 'Super Bee'],
   '2023-CHARGER-SRT HellCat RedEye 6.2': ['None', 'King Daytona', 'Daytona', 'Jailbreak'],
   '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': ['None', 'King Daytona', 'Daytona', 'Jailbreak'],
+  '2025-DURANGO-SRT HellCat 6.2': ['None', 'Silver Bullet', 'Hammerhead', 'Brass Monkey'],
+  '2026-DURANGO-SRT HellCat 6.2': ['None', 'Jailbreak'],
 }
 
 const moparColors = ['B5 Blue', 'Destroyer Gray', 'F8 Green', 'Frostbite', 'Go Mango', 'Granite', 'Octane Red', 'Pitch Black', 'Plum Crazy', 'Sinamon Stick', 'Sublime', 'TorRed', 'Triple Nickel', 'White Knuckle']
@@ -160,11 +162,11 @@ const colorsByConfiguration: Record<string, string[]> = {
   '2024-CAMARO-Panther Collector Edition LT1 6.2-None': ['Panther Matte Black'],
   '2024-CAMARO-Panther Collector Edition SS 6.2-None': ['Panther Matte Black'],
   '2024-CAMARO-Panther Collector Edition ZL1 6.2-None': ['Panther Matte Black'],
-  '2025-DURANGO-SRT HellCat Silver Bullet 6.2-None': ['Triple Nickel'],
-  '2025-DURANGO-SRT HellCat Hammerhead 6.2-None': ['Hammerhead Gray'],
-  '2025-DURANGO-SRT HellCat Brass Monkey 6.2-None': ['Red Oxide'],
+  '2025-DURANGO-SRT HellCat 6.2-Silver Bullet': ['Triple Nickel'],
+  '2025-DURANGO-SRT HellCat 6.2-Hammerhead': ['Hammerhead Gray'],
+  '2025-DURANGO-SRT HellCat 6.2-Brass Monkey': ['Red Oxide'],
   '2026-DURANGO-SRT HellCat 6.2-None': durangoColors2026,
-  '2026-DURANGO-SRT HellCat Jailbreak 6.2-None': durangoColors2026Jailbreak,
+  '2026-DURANGO-SRT HellCat 6.2-Jailbreak': durangoColors2026Jailbreak,
 }
 
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
