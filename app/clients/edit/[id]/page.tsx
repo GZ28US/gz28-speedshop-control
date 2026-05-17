@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
 
@@ -18,7 +18,13 @@ const brazilStates = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ]
 
-export default function NewClientPage() {
+export default function EditClientPage({
+  params,
+}: {
+  params: { id: string }
+}) {
+  const [loading, setLoading] = useState(true)
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -30,6 +36,33 @@ export default function NewClientPage() {
     zip: '',
   })
 
+  useEffect(() => {
+    loadClient()
+  }, [])
+
+  async function loadClient() {
+    const { data } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', params.id)
+      .single()
+
+    if (!data) return
+
+    setForm({
+      name: data.name || '',
+      email: data.email || '',
+      country: data.country || 'USA',
+      phone: data.phone || '',
+      address: data.address || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip: data.zip || '',
+    })
+
+    setLoading(false)
+  }
+
   function changeCountry(country: string) {
     setForm({
       ...form,
@@ -39,15 +72,10 @@ export default function NewClientPage() {
     })
   }
 
-  async function saveClient() {
-    if (!form.name.trim()) {
-      alert('NAME is required')
-      return
-    }
-
+  async function updateClient() {
     const { error } = await supabase
       .from('clients')
-      .insert({
+      .update({
         name: form.name,
         email: form.email,
         country: form.country,
@@ -57,6 +85,7 @@ export default function NewClientPage() {
         state: form.state,
         zip: form.zip,
       })
+      .eq('id', params.id)
 
     if (error) {
       alert(error.message)
@@ -71,12 +100,21 @@ export default function NewClientPage() {
       ? usaStates
       : brazilStates
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-black text-white p-8">
+        <Header />
+        Loading...
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
 
       <h2 className="text-4xl font-bold mb-8">
-        ADD A NEW CLIENT
+        EDIT CLIENT
       </h2>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
@@ -183,10 +221,10 @@ export default function NewClientPage() {
         />
 
         <button
-          onClick={saveClient}
-          className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold"
+          onClick={updateClient}
+          className="bg-blue-700 hover:bg-blue-600 px-6 py-4 rounded-2xl text-xl font-bold"
         >
-          SAVE CLIENT
+          UPDATE CLIENT
         </button>
 
         <a

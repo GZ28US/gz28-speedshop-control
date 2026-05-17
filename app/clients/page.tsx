@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Header from '@/components/Header'
 
 type Client = {
   id: string
@@ -19,9 +20,7 @@ function formatPhone(phone: string | null, country: string | null) {
   const numbers = phone.replace(/\D/g, '')
 
   if (country === 'USA') {
-    const cleaned = numbers.startsWith('1')
-      ? numbers.slice(1)
-      : numbers
+    const cleaned = numbers.startsWith('1') ? numbers.slice(1) : numbers
 
     if (cleaned.length >= 10) {
       return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`
@@ -29,9 +28,7 @@ function formatPhone(phone: string | null, country: string | null) {
   }
 
   if (country === 'BRAZIL') {
-    const cleaned = numbers.startsWith('55')
-      ? numbers.slice(2)
-      : numbers
+    const cleaned = numbers.startsWith('55') ? numbers.slice(2) : numbers
 
     if (cleaned.length >= 10) {
       return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`
@@ -79,9 +76,11 @@ export default function ClientsPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-5xl font-bold mb-10">
+      <Header />
+
+      <h2 className="text-4xl font-bold mb-8">
         CLIENTS
-      </h1>
+      </h2>
 
       <a
         href="/clients/new"
@@ -101,9 +100,9 @@ export default function ClientsPage() {
               key={client.id}
               className="border border-gray-800 rounded-3xl p-5"
             >
-              <h2 className="text-2xl font-bold">
+              <h3 className="text-2xl font-bold">
                 {client.name}
-              </h2>
+              </h3>
 
               <p className="text-gray-400">
                 {client.email}
