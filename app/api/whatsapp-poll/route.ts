@@ -213,7 +213,7 @@ export async function GET() {
 
     const send = await sendMessage(
       isReceiptTrigger
-        ? 'Receipt received ✅\nAmount?'
+        ? 'Receipt attached ✅\nAmount?'
         : 'Amount?'
     )
 
@@ -237,15 +237,12 @@ export async function GET() {
       })
       .eq('id', session.id)
 
-    const send = await sendMessage('Receipt attached ✅')
-
     await markProcessed(messageId)
 
     return NextResponse.json({
       success: true,
-      message: 'Receipt attached to current expense',
+      message: 'Receipt attached silently',
       receipt_file_url: receiptFileUrl,
-      sent: send,
     })
   }
 
