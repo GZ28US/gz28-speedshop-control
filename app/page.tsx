@@ -5,96 +5,99 @@ import { supabase } from '@/lib/supabase'
 
 type Transaction = {
   id: string
-  type: 'income' | 'expense'
+  type: string
   amount: number
   description: string
   transaction_date: string
 }
 
-export default function Home() {
+export default function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [income, setIncome] = useState(0)
+  const [expenses, setExpenses] = useState(0)
 
   useEffect(() => {
     loadTransactions()
   }, [])
 
   async function loadTransactions() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('transactions')
       .select('*')
-      .order('transaction_date', { ascending: false })
+      .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error(error)
-      return
-    }
+    if (!data) return
 
-    setTransactions(data || [])
+    setTransactions(data)
+
+    const totalIncome = data
+      .filter((t) => t.type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0)
+
+    const totalExpenses = data
+      .filter((t) => t.type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0)
+
+    setIncome(totalIncome)
+    setExpenses(totalExpenses)
   }
-
-  const income = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + Number(t.amount), 0)
-
-  const expenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + Number(t.amount), 0)
 
   const profit = income - expenses
 
   return (
-    <main className="min-h-screen p-8 bg-black text-white">
-      <h1 className="text-4xl font-bold mb-8">
-        GZ28 V8 SpeedShop $ CONTROL
+    <main className="min-h-screen bg-black text-white p-8">
+      <h1 className="text-5xl font-bold mb-10">
+        GZ28US Financial CONTROL
       </h1>
 
-      <div className="grid grid-cols-3 gap-4 mb-10">
-        <div className="bg-green-700 p-6 rounded-2xl">
-          <h2 className="text-xl font-semibold">Income</h2>
-          <p className="text-3xl mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-green-700 rounded-3xl p-6">
+          <h2 className="text-2xl font-bold mb-3">Income</h2>
+          <p className="text-5xl">
             ${income.toFixed(2)}
           </p>
         </div>
 
-        <div className="bg-red-700 p-6 rounded-2xl">
-          <h2 className="text-xl font-semibold">Expenses</h2>
-          <p className="text-3xl mt-2">
+        <div className="bg-red-700 rounded-3xl p-6">
+          <h2 className="text-2xl font-bold mb-3">Expenses</h2>
+          <p className="text-5xl">
             ${expenses.toFixed(2)}
           </p>
         </div>
 
-        <div className="bg-blue-700 p-6 rounded-2xl">
-          <h2 className="text-xl font-semibold">Profit</h2>
-          <p className="text-3xl mt-2">
+        <div className="bg-blue-700 rounded-3xl p-6">
+          <h2 className="text-2xl font-bold mb-3">Profit</h2>
+          <p className="text-5xl">
             ${profit.toFixed(2)}
           </p>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {transactions.map(transaction => (
+      <div className="space-y-5">
+        {transactions.map((transaction) => (
           <div
             key={transaction.id}
-            className="border border-gray-700 rounded-xl p-4 flex justify-between"
+            className="border border-gray-800 rounded-3xl p-5 flex items-center justify-between"
           >
             <div>
-              <p className="font-semibold">
+              <h3 className="text-2xl font-bold">
                 {transaction.description}
-              </p>
+              </h3>
 
-              <p className="text-sm text-gray-400">
+              <p className="text-gray-400 text-xl">
                 {transaction.transaction_date}
               </p>
             </div>
 
             <div
-              className={
+              className={`text-3xl font-bold ${
                 transaction.type === 'income'
-                  ? 'text-green-400 font-bold'
-                  : 'text-red-400 font-bold'
-              }
+                  ? 'text-green-400'
+                  : 'text-red-400'
+              }`}
             >
-              ${Number(transaction.amount).toFixed(2)}
+              {transaction.type === 'income' ? '+' : '-'}$
+              {Number(transaction.amount).toFixed(2)}
             </div>
           </div>
         ))}
