@@ -24,88 +24,53 @@ const manufacturersByYear: Record<number, string[]> = {
   2014: ['GM'],
   2015: ['MOPAR', 'GM'],
   2016: ['MOPAR', 'GM'],
-  2017: ['MOPAR', 'GM'],
-  2018: ['MOPAR', 'GM'],
-  2019: ['MOPAR', 'GM'],
-  2020: ['MOPAR', 'GM'],
-  2021: ['MOPAR', 'GM'],
-  2022: ['MOPAR', 'GM'],
-  2023: ['MOPAR', 'GM'],
-  2024: ['GM'],
+  2017: ['MOPAR', 'GM', 'FORD'],
+  2018: ['MOPAR', 'GM', 'FORD'],
+  2019: ['MOPAR', 'GM', 'FORD'],
+  2020: ['MOPAR', 'GM', 'FORD'],
+  2021: ['MOPAR', 'GM', 'FORD'],
+  2022: ['MOPAR', 'GM', 'FORD'],
+  2023: ['MOPAR', 'GM', 'FORD'],
+  2024: ['GM', 'FORD'],
   2025: ['GM'],
   2026: ['GM'],
 }
 
 const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
   MOPAR: {
-    2009: ['RAM'],
-    2010: ['RAM'],
-    2011: ['RAM'],
-    2012: ['RAM'],
-    2013: ['RAM'],
-    2014: ['RAM'],
-    2015: ['RAM'],
-    2016: ['RAM'],
-    2017: ['RAM'],
-    2018: ['DODGE', 'RAM'],
-    2019: ['DODGE'],
-    2020: ['DODGE'],
-    2021: ['DODGE'],
-    2022: ['DODGE'],
-    2023: ['DODGE'],
+    2009: ['RAM'], 2010: ['RAM'], 2011: ['RAM'], 2012: ['RAM'], 2013: ['RAM'],
+    2014: ['RAM'], 2015: ['RAM'], 2016: ['RAM'], 2017: ['RAM'], 2018: ['DODGE', 'RAM'],
+    2019: ['DODGE'], 2020: ['DODGE'], 2021: ['DODGE'], 2022: ['DODGE'], 2023: ['DODGE'],
   },
   GM: {
-    2014: ['CHEVROLET'],
-    2015: ['CHEVROLET'],
-    2016: ['CHEVROLET'],
-    2017: ['CHEVROLET'],
-    2018: ['CHEVROLET'],
-    2019: ['CHEVROLET'],
-    2020: ['CHEVROLET'],
-    2021: ['CHEVROLET'],
-    2022: ['CHEVROLET'],
-    2023: ['CHEVROLET'],
-    2024: ['CHEVROLET'],
-    2025: ['CHEVROLET'],
-    2026: ['CHEVROLET'],
+    2014: ['CHEVROLET'], 2015: ['CHEVROLET'], 2016: ['CHEVROLET'], 2017: ['CHEVROLET'],
+    2018: ['CHEVROLET'], 2019: ['CHEVROLET'], 2020: ['CHEVROLET'], 2021: ['CHEVROLET'],
+    2022: ['CHEVROLET'], 2023: ['CHEVROLET'], 2024: ['CHEVROLET'], 2025: ['CHEVROLET'], 2026: ['CHEVROLET'],
+  },
+  FORD: {
+    2017: ['FORD'], 2018: ['FORD'], 2019: ['FORD'], 2020: ['FORD'],
+    2021: ['FORD'], 2022: ['FORD'], 2023: ['FORD'], 2024: ['FORD'],
   },
 }
 
 const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
   DODGE: {
-    2018: ['CHALLENGER', 'CHARGER'],
-    2019: ['CHALLENGER', 'CHARGER'],
-    2020: ['CHALLENGER', 'CHARGER'],
-    2021: ['CHALLENGER', 'CHARGER'],
-    2022: ['CHALLENGER', 'CHARGER'],
-    2023: ['CHALLENGER', 'CHARGER'],
+    2018: ['CHALLENGER', 'CHARGER'], 2019: ['CHALLENGER', 'CHARGER'], 2020: ['CHALLENGER', 'CHARGER'],
+    2021: ['CHALLENGER', 'CHARGER'], 2022: ['CHALLENGER', 'CHARGER'], 2023: ['CHALLENGER', 'CHARGER'],
   },
   RAM: {
-    2009: ['1500'],
-    2010: ['1500'],
-    2011: ['1500'],
-    2012: ['1500'],
-    2013: ['1500'],
-    2014: ['1500'],
-    2015: ['1500'],
-    2016: ['1500'],
-    2017: ['1500'],
-    2018: ['1500'],
+    2009: ['1500'], 2010: ['1500'], 2011: ['1500'], 2012: ['1500'], 2013: ['1500'],
+    2014: ['1500'], 2015: ['1500'], 2016: ['1500'], 2017: ['1500'], 2018: ['1500'],
   },
   CHEVROLET: {
-    2014: ['CORVETTE'],
-    2015: ['CORVETTE'],
-    2016: ['CAMARO', 'CORVETTE'],
-    2017: ['CAMARO', 'CORVETTE'],
-    2018: ['CAMARO', 'CORVETTE'],
-    2019: ['CAMARO', 'CORVETTE'],
-    2020: ['CAMARO', 'CORVETTE'],
-    2021: ['CAMARO', 'CORVETTE'],
-    2022: ['CAMARO', 'CORVETTE'],
-    2023: ['CAMARO', 'CORVETTE'],
-    2024: ['CAMARO', 'CORVETTE'],
-    2025: ['CORVETTE'],
-    2026: ['CORVETTE'],
+    2014: ['CORVETTE'], 2015: ['CORVETTE'], 2016: ['CAMARO', 'CORVETTE'], 2017: ['CAMARO', 'CORVETTE'],
+    2018: ['CAMARO', 'CORVETTE'], 2019: ['CAMARO', 'CORVETTE'], 2020: ['CAMARO', 'CORVETTE'],
+    2021: ['CAMARO', 'CORVETTE'], 2022: ['CAMARO', 'CORVETTE'], 2023: ['CAMARO', 'CORVETTE'],
+    2024: ['CAMARO', 'CORVETTE'], 2025: ['CORVETTE'], 2026: ['CORVETTE'],
+  },
+  FORD: {
+    2017: ['F150'], 2018: ['F150'], 2019: ['F150'], 2020: ['F150'],
+    2021: ['F150'], 2022: ['F150'], 2023: ['F150'], 2024: ['F150'],
   },
 }
 
@@ -138,31 +103,24 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
     2024: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2', 'Panther Collector Edition LT1 6.2', 'Panther Collector Edition SS 6.2', 'Panther Collector Edition ZL1 6.2'],
   },
   CORVETTE: {
-    2014: ['Stingray 6.2'],
-    2015: ['Stingray 6.2', 'Z06 6.2'],
-    2016: ['Stingray 6.2', 'Z06 6.2'],
-    2017: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'],
-    2018: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'],
-    2019: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2', 'ZR1 6.2'],
-    2020: ['Stingray 6.2'],
-    2021: ['Stingray 6.2'],
-    2022: ['Stingray 6.2'],
+    2014: ['Stingray 6.2'], 2015: ['Stingray 6.2', 'Z06 6.2'], 2016: ['Stingray 6.2', 'Z06 6.2'],
+    2017: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'], 2018: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'],
+    2019: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2', 'ZR1 6.2'], 2020: ['Stingray 6.2'],
+    2021: ['Stingray 6.2'], 2022: ['Stingray 6.2'],
     2023: ['Stingray 6.2', 'Z06 5.5', '70th Anniversary Stingray 6.2', '70th Anniversary Z06 5.5'],
     2024: ['Stingray 6.2', 'Z06 5.5', 'E-Ray 6.2'],
     2025: ['Stingray 6.2', 'Z06 5.5', 'E-Ray 6.2', 'ZR1 5.5TT'],
     2026: ['Stingray 6.2', 'Z06 5.5', 'E-Ray 6.2', 'ZR1 5.5TT'],
   },
   '1500': {
-    2009: ['1500 5.7'],
-    2010: ['1500 5.7'],
-    2011: ['1500 5.7'],
-    2012: ['1500 5.7'],
-    2013: ['1500 5.7'],
-    2014: ['1500 5.7'],
-    2015: ['1500 5.7', '1500 Rebel 5.7'],
-    2016: ['1500 5.7', '1500 Rebel 5.7'],
-    2017: ['1500 5.7', '1500 Rebel 5.7'],
-    2018: ['1500 5.7', '1500 Rebel 5.7'],
+    2009: ['1500 5.7'], 2010: ['1500 5.7'], 2011: ['1500 5.7'], 2012: ['1500 5.7'], 2013: ['1500 5.7'],
+    2014: ['1500 5.7'], 2015: ['1500 5.7', '1500 Rebel 5.7'], 2016: ['1500 5.7', '1500 Rebel 5.7'],
+    2017: ['1500 5.7', '1500 Rebel 5.7'], 2018: ['1500 5.7', '1500 Rebel 5.7'],
+  },
+  F150: {
+    2017: ['SuperSnake 5.0L SC'], 2018: ['SuperSnake 5.0L SC'], 2019: ['SuperSnake 5.0L SC'],
+    2020: ['SuperSnake 5.0L SC'], 2021: ['SuperSnake 5.0L SC'], 2022: ['SuperSnake 5.0L SC'],
+    2023: ['SuperSnake 5.0L SC'], 2024: ['SuperSnake 5.0L SC'],
   },
 }
 
@@ -184,6 +142,7 @@ const moparColors = ['B5 Blue', 'Destroyer Gray', 'F8 Green', 'Frostbite', 'Go M
 const ramColors = ['Black', 'Bright White', 'Brilliant Black Crystal', 'Bright Silver Metallic', 'Deep Cherry Red Crystal', 'Maximum Steel Metallic', 'Granite Crystal Metallic', 'True Blue Pearl', 'Western Brown', 'Flame Red']
 const camaroColors = ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Rapid Blue', 'Shadow Gray', 'Sharkskin', 'Vivid Orange', 'Wild Cherry', 'Radiant Red', 'Panther Matte Black']
 const corvetteColors = ['Accelerate Yellow', 'Arctic White', 'Black', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Sea Wolf Gray', 'Silver Flare', 'Torch Red', 'White Pearl']
+const fordColors = ['Agate Black', 'Oxford White', 'Star White', 'Rapid Red', 'Antimatter Blue', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver', 'Velocity Blue', 'Lead Foot', 'Magma Red', 'Shadow Black']
 
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
@@ -225,15 +184,12 @@ export default function NewRidePage() {
 
   async function loadNextProjectCode() {
     const { data } = await supabase.from('rides').select('project_code')
-
     const usedNumbers = data?.map((item) => {
       const match = item.project_code?.match(/US\.(\d+)/)
       return match ? Number(match[1]) : null
     }) || []
-
     let nextNumber = 0
     while (usedNumbers.includes(nextNumber)) nextNumber++
-
     setProjectCode(`US.${String(nextNumber).padStart(3, '0')}`)
   }
 
@@ -273,15 +229,14 @@ export default function NewRidePage() {
 
   useEffect(() => {
     const key = `${year}-${model}-${version}-${specialEdition}`
-
     if (colorsByConfiguration[key]) {
       setColor(colorsByConfiguration[key][0])
       return
     }
-
     if (brand === 'RAM') setColor(ramColors[0])
     else if (model === 'CAMARO') setColor(camaroColors[0])
     else if (model === 'CORVETTE') setColor(corvetteColors[0])
+    else if (brand === 'FORD') setColor(fordColors[0])
     else setColor(moparColors[0])
   }, [year, brand, model, version, specialEdition])
 
@@ -302,12 +257,10 @@ export default function NewRidePage() {
         plate,
       },
     ])
-
     if (error) {
       alert(error.message)
       return
     }
-
     router.push('/rides')
   }
 
@@ -318,13 +271,7 @@ export default function NewRidePage() {
   const availableSpecialEditions = specialEditions[`${year}-${model}-${version}`] || []
   const availableColors =
     colorsByConfiguration[`${year}-${model}-${version}-${specialEdition}`] ||
-    (brand === 'RAM'
-      ? ramColors
-      : model === 'CAMARO'
-        ? camaroColors
-        : model === 'CORVETTE'
-          ? corvetteColors
-          : moparColors)
+    (brand === 'RAM' ? ramColors : model === 'CAMARO' ? camaroColors : model === 'CORVETTE' ? corvetteColors : brand === 'FORD' ? fordColors : moparColors)
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
