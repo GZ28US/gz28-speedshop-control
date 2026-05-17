@@ -138,6 +138,12 @@ const colorsByConfiguration: Record<string, string[]> = {
 }
 
 export default function NewRidePage() {
+  const [projectCode, setProjectCode] = useState('US.001')
+  const [projectName, setProjectName] = useState('')
+
+  const [vin, setVin] = useState('')
+  const [plate, setPlate] = useState('')
+
   const [year, setYear] = useState(2023)
 
   const manufacturer = 'MOPAR'
@@ -162,11 +168,7 @@ export default function NewRidePage() {
 
   const [color, setColor] = useState(availableColors[0])
 
-  const [entryDate, setEntryDate] = useState('')
-  const [vin, setVin] = useState('')
-  const [plate, setPlate] = useState('')
   const [performancePackage, setPerformancePackage] = useState('')
-  const [projectCode, setProjectCode] = useState('US.0001')
 
   useEffect(() => {
     async function loadNextProjectCode() {
@@ -178,11 +180,15 @@ export default function NewRidePage() {
 
       if (data && data.length > 0) {
         const lastCode = data[0].project_code
-        const number = Number(lastCode.replace('US.', ''))
+
+        const number = Number(
+          lastCode.replace('US.', '')
+        )
+
         const nextNumber = number + 1
 
         setProjectCode(
-          `US.${String(nextNumber).padStart(4, '0')}`
+          `US.${String(nextNumber).padStart(3, '0')}`
         )
       }
     }
@@ -198,7 +204,9 @@ export default function NewRidePage() {
 
   useEffect(() => {
     const key = `${year}-${model}-${version}`
-    const options = specialEditions[key] || []
+
+    const options =
+      specialEditions[key] || []
 
     setSpecialEdition(options[0] || 'None')
   }, [year, model, version])
@@ -227,7 +235,7 @@ export default function NewRidePage() {
       .insert([
         {
           project_code: projectCode,
-          entry_date: entryDate,
+          project_name: projectName,
           manufacturer,
           brand,
           model,
@@ -239,7 +247,8 @@ export default function NewRidePage() {
           color,
           vin,
           plate,
-          performance_package: performancePackage,
+          performance_package:
+            performancePackage,
         },
       ])
 
@@ -260,133 +269,239 @@ export default function NewRidePage() {
       </h2>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
-        <input
-          type="text"
-          value={projectCode}
-          disabled
-          className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            PROJECT CODE
+          </label>
 
-        <input
-          type="date"
-          value={entryDate}
-          onChange={(e) => setEntryDate(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+          <input
+            type="text"
+            value={projectCode}
+            onChange={(e) =>
+              setProjectCode(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
 
-        <select
-          value={year}
-          onChange={(e) => changeYear(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        >
-          {years.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            PROJECT NAME
+          </label>
 
-        <input
-          type="text"
-          value={manufacturer}
-          disabled
-          className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+          <input
+            type="text"
+            value={projectName}
+            onChange={(e) =>
+              setProjectName(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
 
-        <input
-          type="text"
-          value={brand}
-          disabled
-          className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            VIN
+          </label>
 
-        <select
-          value={model}
-          onChange={(e) => changeModel(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        >
-          {models.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+          <input
+            type="text"
+            value={vin}
+            onChange={(e) =>
+              setVin(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, '')
+              )
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
 
-        <select
-          value={version}
-          onChange={(e) => setVersion(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        >
-          {versionsByModelAndYear[model][year].map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            PLATE
+          </label>
 
-        {availableSpecialEditions.length > 0 && (
+          <input
+            type="text"
+            value={plate}
+            onChange={(e) =>
+              setPlate(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, '')
+              )
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            YEAR
+          </label>
+
           <select
-            value={specialEdition}
-            onChange={(e) => setSpecialEdition(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+            value={year}
+            onChange={(e) =>
+              changeYear(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
-            {availableSpecialEditions.map((option) => (
-              <option key={option} value={option}>
+            {years.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
                 {option}
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            MANUFACTURER
+          </label>
+
+          <input
+            type="text"
+            value={manufacturer}
+            disabled
+            className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            BRAND
+          </label>
+
+          <input
+            type="text"
+            value={brand}
+            disabled
+            className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            MODEL
+          </label>
+
+          <select
+            value={model}
+            onChange={(e) =>
+              changeModel(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {models.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            VERSION
+          </label>
+
+          <select
+            value={version}
+            onChange={(e) =>
+              setVersion(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {versionsByModelAndYear[model][year].map(
+              (option) => (
+                <option
+                  key={option}
+                  value={option}
+                >
+                  {option}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        {availableSpecialEditions.length > 0 && (
+          <div>
+            <label className="block mb-2 text-lg font-bold">
+              SPECIAL EDITION
+            </label>
+
+            <select
+              value={specialEdition}
+              onChange={(e) =>
+                setSpecialEdition(
+                  e.target.value
+                )
+              }
+              className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+            >
+              {availableSpecialEditions.map(
+                (option) => (
+                  <option
+                    key={option}
+                    value={option}
+                  >
+                    {option}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
         )}
 
-        <select
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        >
-          {availableColors.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            COLOR
+          </label>
 
-        <input
-          type="text"
-          placeholder="VIN"
-          value={vin}
-          onChange={(e) =>
-            setVin(
-              e.target.value
-                .toUpperCase()
-                .replace(/[^A-Z0-9]/g, '')
-            )
-          }
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+          <select
+            value={color}
+            onChange={(e) =>
+              setColor(e.target.value)
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {availableColors.map((option) => (
+              <option
+                key={option}
+                value={option}
+              >
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <input
-          type="text"
-          placeholder="PLATE"
-          value={plate}
-          onChange={(e) =>
-            setPlate(
-              e.target.value
-                .toUpperCase()
-                .replace(/[^A-Z0-9]/g, '')
-            )
-          }
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+        <div>
+          <label className="block mb-2 text-lg font-bold">
+            PERFORMANCE PACKAGE
+          </label>
 
-        <input
-          type="text"
-          placeholder="PERFORMANCE PACKAGE"
-          value={performancePackage}
-          onChange={(e) =>
-            setPerformancePackage(e.target.value)
-          }
-          className="bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-        />
+          <input
+            type="text"
+            value={performancePackage}
+            onChange={(e) =>
+              setPerformancePackage(
+                e.target.value
+              )
+            }
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          />
+        </div>
 
         <button
           onClick={saveRide}
