@@ -11,22 +11,8 @@ type Client = {
 }
 
 const years = [
-  2009,
-  2010,
-  2011,
-  2012,
-  2013,
-  2014,
-  2015,
-  2016,
-  2017,
-  2018,
-  2019,
-  2020,
-  2021,
-  2022,
-  2023,
-  2024,
+  2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017,
+  2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025,
 ]
 
 const manufacturersByYear: Record<number, string[]> = {
@@ -35,8 +21,8 @@ const manufacturersByYear: Record<number, string[]> = {
   2011: ['MOPAR'],
   2012: ['MOPAR'],
   2013: ['MOPAR'],
-  2014: ['MOPAR'],
-  2015: ['MOPAR'],
+  2014: ['GM'],
+  2015: ['MOPAR', 'GM'],
   2016: ['MOPAR', 'GM'],
   2017: ['MOPAR', 'GM'],
   2018: ['MOPAR', 'GM'],
@@ -46,6 +32,7 @@ const manufacturersByYear: Record<number, string[]> = {
   2022: ['MOPAR', 'GM'],
   2023: ['MOPAR', 'GM'],
   2024: ['GM'],
+  2025: ['GM'],
 }
 
 const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
@@ -67,6 +54,8 @@ const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
     2023: ['DODGE'],
   },
   GM: {
+    2014: ['CHEVROLET'],
+    2015: ['CHEVROLET'],
     2016: ['CHEVROLET'],
     2017: ['CHEVROLET'],
     2018: ['CHEVROLET'],
@@ -76,6 +65,7 @@ const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
     2022: ['CHEVROLET'],
     2023: ['CHEVROLET'],
     2024: ['CHEVROLET'],
+    2025: ['CHEVROLET'],
   },
 }
 
@@ -101,15 +91,18 @@ const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
     2018: ['1500'],
   },
   CHEVROLET: {
-    2016: ['CAMARO'],
-    2017: ['CAMARO'],
-    2018: ['CAMARO'],
-    2019: ['CAMARO'],
-    2020: ['CAMARO'],
-    2021: ['CAMARO'],
-    2022: ['CAMARO'],
-    2023: ['CAMARO'],
-    2024: ['CAMARO'],
+    2014: ['CORVETTE'],
+    2015: ['CORVETTE'],
+    2016: ['CAMARO', 'CORVETTE'],
+    2017: ['CAMARO', 'CORVETTE'],
+    2018: ['CAMARO', 'CORVETTE'],
+    2019: ['CAMARO', 'CORVETTE'],
+    2020: ['CAMARO', 'CORVETTE'],
+    2021: ['CAMARO', 'CORVETTE'],
+    2022: ['CAMARO', 'CORVETTE'],
+    2023: ['CAMARO', 'CORVETTE'],
+    2024: ['CAMARO', 'CORVETTE'],
+    2025: ['CORVETTE'],
   },
 }
 
@@ -293,25 +286,69 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
     ],
   },
 
-  '1500': {
-    2009: [
-      '1500 5.7',
-    ],
-    2010: [
-      '1500 5.7',
-    ],
-    2011: [
-      '1500 5.7',
-    ],
-    2012: [
-      '1500 5.7',
-    ],
-    2013: [
-      '1500 5.7',
-    ],
+  CORVETTE: {
     2014: [
-      '1500 5.7',
+      'Stingray 6.2',
     ],
+    2015: [
+      'Stingray 6.2',
+      'Z06 6.2',
+    ],
+    2016: [
+      'Stingray 6.2',
+      'Z06 6.2',
+    ],
+    2017: [
+      'Stingray 6.2',
+      'Grand Sport 6.2',
+      'Z06 6.2',
+    ],
+    2018: [
+      'Stingray 6.2',
+      'Grand Sport 6.2',
+      'Z06 6.2',
+    ],
+    2019: [
+      'Stingray 6.2',
+      'Grand Sport 6.2',
+      'Z06 6.2',
+      'ZR1 6.2',
+    ],
+    2020: [
+      'Stingray 6.2',
+    ],
+    2021: [
+      'Stingray 6.2',
+    ],
+    2022: [
+      'Stingray 6.2',
+    ],
+    2023: [
+      'Stingray 6.2',
+      'Z06 5.5',
+      '70th Anniversary Stingray 6.2',
+      '70th Anniversary Z06 5.5',
+    ],
+    2024: [
+      'Stingray 6.2',
+      'Z06 5.5',
+      'E-Ray 6.2',
+    ],
+    2025: [
+      'Stingray 6.2',
+      'Z06 5.5',
+      'E-Ray 6.2',
+      'ZR1 5.5TT',
+    ],
+  },
+
+  '1500': {
+    2009: ['1500 5.7'],
+    2010: ['1500 5.7'],
+    2011: ['1500 5.7'],
+    2012: ['1500 5.7'],
+    2013: ['1500 5.7'],
+    2014: ['1500 5.7'],
     2015: [
       '1500 5.7',
       '1500 Rebel 5.7',
@@ -332,11 +369,7 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
 }
 
 const specialEditions: Record<string, string[]> = {
-  '2019-CHALLENGER-R/T ScatPack 6.4': [
-    'None',
-    '1320',
-  ],
-
+  '2019-CHALLENGER-R/T ScatPack 6.4': ['None', '1320'],
   '2023-CHALLENGER-R/T ScatPack 6.4': [
     'None',
     'Swinger',
@@ -345,7 +378,6 @@ const specialEditions: Record<string, string[]> = {
     'T/A',
     'Shaker',
   ],
-
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4': [
     'None',
     'Swinger',
@@ -354,46 +386,38 @@ const specialEditions: Record<string, string[]> = {
     'T/A',
     'Shaker',
   ],
-
   '2023-CHALLENGER-SRT HellCat 6.2': [
     'None',
     'Black Ghost',
     'Jailbreak',
   ],
-
   '2023-CHALLENGER-SRT HellCat WideBody 6.2': [
     'None',
     'Black Ghost',
     'Jailbreak',
   ],
-
   '2023-CHALLENGER-SRT HellCat RedEye 6.2': [
     'None',
     'Jailbreak',
   ],
-
   '2023-CHALLENGER-SRT HellCat RedEye WideBody 6.2': [
     'None',
     'Jailbreak',
   ],
-
   '2023-CHARGER-ScatPack 6.4': [
     'None',
     'Super Bee',
   ],
-
   '2023-CHARGER-ScatPack WideBody 6.4': [
     'None',
     'Super Bee',
   ],
-
   '2023-CHARGER-SRT HellCat RedEye 6.2': [
     'None',
     'King Daytona',
     'Daytona',
     'Jailbreak',
   ],
-
   '2023-CHARGER-SRT HellCat RedEye WideBody 6.2': [
     'None',
     'King Daytona',
@@ -446,38 +470,37 @@ const camaroColors = [
   'Panther Matte Black',
 ]
 
+const corvetteColors = [
+  'Accelerate Yellow',
+  'Arctic White',
+  'Black',
+  'Ceramic Matrix Gray',
+  'Elkhart Lake Blue',
+  'Hypersonic Gray',
+  'Rapid Blue',
+  'Red Mist',
+  'Sea Wolf Gray',
+  'Silver Flare',
+  'Torch Red',
+  'White Pearl',
+]
+
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': [
     'Sublime',
     'F8 Green',
     'White Knuckle',
   ],
-
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4-Swinger': [
     'Sublime',
     'F8 Green',
     'White Knuckle',
   ],
-
-  '2023-CHARGER-SRT HellCat RedEye 6.2-King Daytona': [
-    'Go Mango',
-  ],
-
-  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2-King Daytona': [
-    'Go Mango',
-  ],
-
-  '2024-CAMARO-Panther Collector Edition LT1 6.2-None': [
-    'Panther Matte Black',
-  ],
-
-  '2024-CAMARO-Panther Collector Edition SS 6.2-None': [
-    'Panther Matte Black',
-  ],
-
-  '2024-CAMARO-Panther Collector Edition ZL1 6.2-None': [
-    'Panther Matte Black',
-  ],
+  '2023-CHARGER-SRT HellCat RedEye 6.2-King Daytona': ['Go Mango'],
+  '2023-CHARGER-SRT HellCat RedEye WideBody 6.2-King Daytona': ['Go Mango'],
+  '2024-CAMARO-Panther Collector Edition LT1 6.2-None': ['Panther Matte Black'],
+  '2024-CAMARO-Panther Collector Edition SS 6.2-None': ['Panther Matte Black'],
+  '2024-CAMARO-Panther Collector Edition ZL1 6.2-None': ['Panther Matte Black'],
 }
 
 export default function NewRidePage() {
@@ -542,12 +565,12 @@ export default function NewRidePage() {
   }
 
   useEffect(() => {
-    const availableManufacturers = manufacturersByYear[year]
+    const availableManufacturers = manufacturersByYear[year] || []
     const newManufacturer = availableManufacturers.includes(manufacturer)
       ? manufacturer
       : availableManufacturers[0]
 
-    setManufacturer(newManufacturer)
+    setManufacturer(newManufacturer || '')
   }, [year, manufacturer])
 
   useEffect(() => {
@@ -597,6 +620,11 @@ export default function NewRidePage() {
 
     if (model === 'CAMARO') {
       setColor(camaroColors[0])
+      return
+    }
+
+    if (model === 'CORVETTE') {
+      setColor(corvetteColors[0])
       return
     }
 
@@ -650,7 +678,9 @@ export default function NewRidePage() {
       ? ramColors
       : model === 'CAMARO'
         ? camaroColors
-        : moparColors)
+        : model === 'CORVETTE'
+          ? corvetteColors
+          : moparColors)
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -662,20 +692,14 @@ export default function NewRidePage() {
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            CLIENT
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">CLIENT</label>
           <select
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {clients.map((client) => (
-              <option
-                key={client.id}
-                value={client.id}
-              >
+              <option key={client.id} value={client.id}>
                 {client.name}
               </option>
             ))}
@@ -683,10 +707,7 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            PROJECT CODE
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">PROJECT CODE</label>
           <input
             type="text"
             value={projectCode}
@@ -696,10 +717,7 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            PROJECT NAME
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">PROJECT NAME</label>
           <input
             type="text"
             value={projectName}
@@ -709,10 +727,7 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            VIN
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">VIN</label>
           <input
             type="text"
             value={vin}
@@ -728,10 +743,7 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            PLATE
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">PLATE</label>
           <input
             type="text"
             value={plate}
@@ -747,20 +759,14 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            YEAR
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">YEAR</label>
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {years.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -768,20 +774,14 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            MANUFACTURER
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">MANUFACTURER</label>
           <select
             value={manufacturer}
             onChange={(e) => setManufacturer(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {availableManufacturers.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -789,20 +789,14 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            BRAND
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">BRAND</label>
           <select
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {availableBrands.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -810,20 +804,14 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            MODEL
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">MODEL</label>
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {availableModels.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -831,20 +819,14 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            VERSION
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">VERSION</label>
           <select
             value={version}
             onChange={(e) => setVersion(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {availableVersions.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -856,17 +838,13 @@ export default function NewRidePage() {
             <label className="block mb-2 text-lg font-bold">
               SPECIAL EDITION
             </label>
-
             <select
               value={specialEdition}
               onChange={(e) => setSpecialEdition(e.target.value)}
               className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
             >
               {availableSpecialEditions.map((option) => (
-                <option
-                  key={option}
-                  value={option}
-                >
+                <option key={option} value={option}>
                   {option}
                 </option>
               ))}
@@ -875,20 +853,14 @@ export default function NewRidePage() {
         )}
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            COLOR
-          </label>
-
+          <label className="block mb-2 text-lg font-bold">COLOR</label>
           <select
             value={color}
             onChange={(e) => setColor(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {availableColors.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -902,10 +874,7 @@ export default function NewRidePage() {
           SAVE RIDE
         </button>
 
-        <a
-          href="/rides"
-          className="text-gray-400 text-xl"
-        >
+        <a href="/rides" className="text-gray-400 text-xl">
           Cancel
         </a>
       </div>
