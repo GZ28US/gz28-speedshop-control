@@ -10,12 +10,67 @@ type Client = {
   name: string
 }
 
-const years = [2023]
+const years = [2018, 2019, 2020, 2021, 2022, 2023]
 
-const models = ['CHALLENGER', 'CHARGER']
+const manufacturers = ['MOPAR']
+
+const brandsByManufacturer: Record<string, string[]> = {
+  MOPAR: ['DODGE'],
+}
+
+const modelsByBrand: Record<string, string[]> = {
+  DODGE: ['CHALLENGER', 'CHARGER'],
+}
 
 const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
   CHALLENGER: {
+    2018: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'SRT 392 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT Demon 6.2',
+    ],
+    2019: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2020: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2021: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
+    2022: [
+      'R/T 5.7',
+      'R/T ScatPack 6.4',
+      'R/T ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+      'SRT HellCat RedEye SuperStock 6.2',
+    ],
     2023: [
       'R/T 5.7',
       'R/T ScatPack 6.4',
@@ -30,6 +85,47 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
   },
 
   CHARGER: {
+    2018: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'SRT 392 6.4',
+      'SRT HellCat 6.2',
+    ],
+    2019: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2020: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2021: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
+    2022: [
+      'R/T 5.7',
+      'ScatPack 6.4',
+      'ScatPack WideBody 6.4',
+      'SRT HellCat 6.2',
+      'SRT HellCat WideBody 6.2',
+      'SRT HellCat RedEye 6.2',
+      'SRT HellCat RedEye WideBody 6.2',
+    ],
     2023: [
       'R/T 5.7',
       'ScatPack 6.4',
@@ -43,6 +139,8 @@ const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
 }
 
 const specialEditions: Record<string, string[]> = {
+  '2019-CHALLENGER-R/T ScatPack 6.4': ['None', '1320'],
+
   '2023-CHALLENGER-R/T ScatPack 6.4': [
     'None',
     'Swinger',
@@ -149,17 +247,15 @@ export default function NewRidePage() {
   const [clients, setClients] = useState<Client[]>([])
   const [clientId, setClientId] = useState('')
 
-  const [projectCode, setProjectCode] = useState('US.001')
+  const [projectCode, setProjectCode] = useState('US.000')
   const [projectName, setProjectName] = useState('')
 
   const [vin, setVin] = useState('')
   const [plate, setPlate] = useState('')
 
-  const [year] = useState(2023)
-
-  const manufacturer = 'MOPAR'
-  const brand = 'DODGE'
-
+  const [year, setYear] = useState(2023)
+  const [manufacturer, setManufacturer] = useState('MOPAR')
+  const [brand, setBrand] = useState('DODGE')
   const [model, setModel] = useState('CHALLENGER')
 
   const [version, setVersion] = useState(
@@ -167,23 +263,17 @@ export default function NewRidePage() {
   )
 
   const specialEditionKey = `${year}-${model}-${version}`
+  const availableSpecialEditions = specialEditions[specialEditionKey] || []
 
-  const availableSpecialEditions =
-    specialEditions[specialEditionKey] || []
+  const [specialEdition, setSpecialEdition] = useState('None')
 
-  const [specialEdition, setSpecialEdition] =
-    useState('None')
-
-  const colorKey =
-    `${year}-${model}-${version}-${specialEdition}`
+  const colorKey = `${year}-${model}-${version}-${specialEdition}`
 
   const availableColors =
     colorsByConfiguration[colorKey] ||
     colorsByConfiguration.default
 
-  const [color, setColor] = useState(
-    availableColors[0]
-  )
+  const [color, setColor] = useState(availableColors[0])
 
   useEffect(() => {
     loadClients()
@@ -193,7 +283,7 @@ export default function NewRidePage() {
   async function loadClients() {
     const { data } = await supabase
       .from('clients')
-      .select('*')
+      .select('id, name')
       .order('name', { ascending: true })
 
     setClients(data || [])
@@ -210,48 +300,43 @@ export default function NewRidePage() {
 
     const usedNumbers =
       data?.map((item) => {
-        const match =
-          item.project_code?.match(/US\.(\d+)/)
+        const match = item.project_code?.match(/US\.(\d+)/)
 
-        return match
-          ? Number(match[1])
-          : null
+        return match ? Number(match[1]) : null
       }) || []
 
     let nextNumber = 0
 
-    while (
-      usedNumbers.includes(nextNumber)
-    ) {
+    while (usedNumbers.includes(nextNumber)) {
       nextNumber++
     }
 
-    setProjectCode(
-      `US.${String(nextNumber).padStart(3, '0')}`
-    )
+    setProjectCode(`US.${String(nextNumber).padStart(3, '0')}`)
   }
 
   useEffect(() => {
-    setVersion(
-      versionsByModelAndYear[model][year][0]
-    )
+    const firstBrand = brandsByManufacturer[manufacturer][0]
+    setBrand(firstBrand)
+  }, [manufacturer])
+
+  useEffect(() => {
+    const firstModel = modelsByBrand[brand][0]
+    setModel(firstModel)
+  }, [brand])
+
+  useEffect(() => {
+    setVersion(versionsByModelAndYear[model][year][0])
   }, [year, model])
 
   useEffect(() => {
-    const key =
-      `${year}-${model}-${version}`
+    const key = `${year}-${model}-${version}`
+    const options = specialEditions[key] || []
 
-    const options =
-      specialEditions[key] || []
-
-    setSpecialEdition(
-      options[0] || 'None'
-    )
+    setSpecialEdition(options[0] || 'None')
   }, [year, model, version])
 
   useEffect(() => {
-    const key =
-      `${year}-${model}-${version}-${specialEdition}`
+    const key = `${year}-${model}-${version}-${specialEdition}`
 
     const colors =
       colorsByConfiguration[key] ||
@@ -265,7 +350,7 @@ export default function NewRidePage() {
       .from('rides')
       .insert([
         {
-          client_id: clientId,
+          client_id: clientId || null,
           project_code: projectCode,
           project_name: projectName,
           year,
@@ -301,22 +386,15 @@ export default function NewRidePage() {
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            CLIENT
-          </label>
+          <label className="block mb-2 text-lg font-bold">CLIENT</label>
 
           <select
             value={clientId}
-            onChange={(e) =>
-              setClientId(e.target.value)
-            }
+            onChange={(e) => setClientId(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {clients.map((client) => (
-              <option
-                key={client.id}
-                value={client.id}
-              >
+              <option key={client.id} value={client.id}>
                 {client.name}
               </option>
             ))}
@@ -324,39 +402,29 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            PROJECT CODE
-          </label>
+          <label className="block mb-2 text-lg font-bold">PROJECT CODE</label>
 
           <input
             type="text"
             value={projectCode}
-            onChange={(e) =>
-              setProjectCode(e.target.value)
-            }
+            onChange={(e) => setProjectCode(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           />
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            PROJECT NAME
-          </label>
+          <label className="block mb-2 text-lg font-bold">PROJECT NAME</label>
 
           <input
             type="text"
             value={projectName}
-            onChange={(e) =>
-              setProjectName(e.target.value)
-            }
+            onChange={(e) => setProjectName(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           />
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            VIN
-          </label>
+          <label className="block mb-2 text-lg font-bold">VIN</label>
 
           <input
             type="text"
@@ -373,9 +441,7 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            PLATE
-          </label>
+          <label className="block mb-2 text-lg font-bold">PLATE</label>
 
           <input
             type="text"
@@ -392,61 +458,15 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            YEAR
-          </label>
-
-          <input
-            type="text"
-            value={year}
-            disabled
-            className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">
-            MANUFACTURER
-          </label>
-
-          <input
-            type="text"
-            value={manufacturer}
-            disabled
-            className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">
-            BRAND
-          </label>
-
-          <input
-            type="text"
-            value={brand}
-            disabled
-            className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">
-            MODEL
-          </label>
+          <label className="block mb-2 text-lg font-bold">YEAR</label>
 
           <select
-            value={model}
-            onChange={(e) =>
-              setModel(e.target.value)
-            }
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
-            {models.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+            {years.map((option) => (
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -454,27 +474,66 @@ export default function NewRidePage() {
         </div>
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            VERSION
-          </label>
+          <label className="block mb-2 text-lg font-bold">MANUFACTURER</label>
+
+          <select
+            value={manufacturer}
+            onChange={(e) => setManufacturer(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {manufacturers.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">BRAND</label>
+
+          <select
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {brandsByManufacturer[manufacturer].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">MODEL</label>
+
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
+          >
+            {modelsByBrand[brand].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">VERSION</label>
 
           <select
             value={version}
-            onChange={(e) =>
-              setVersion(e.target.value)
-            }
+            onChange={(e) => setVersion(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
-            {versionsByModelAndYear[model][year].map(
-              (option) => (
-                <option
-                  key={option}
-                  value={option}
-                >
-                  {option}
-                </option>
-              )
-            )}
+            {versionsByModelAndYear[model][year].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -486,44 +545,28 @@ export default function NewRidePage() {
 
             <select
               value={specialEdition}
-              onChange={(e) =>
-                setSpecialEdition(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setSpecialEdition(e.target.value)}
               className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
             >
-              {availableSpecialEditions.map(
-                (option) => (
-                  <option
-                    key={option}
-                    value={option}
-                  >
-                    {option}
-                  </option>
-                )
-              )}
+              {availableSpecialEditions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </select>
           </div>
         )}
 
         <div>
-          <label className="block mb-2 text-lg font-bold">
-            COLOR
-          </label>
+          <label className="block mb-2 text-lg font-bold">COLOR</label>
 
           <select
             value={color}
-            onChange={(e) =>
-              setColor(e.target.value)
-            }
+            onChange={(e) => setColor(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl"
           >
             {availableColors.map((option) => (
-              <option
-                key={option}
-                value={option}
-              >
+              <option key={option} value={option}>
                 {option}
               </option>
             ))}
@@ -537,10 +580,7 @@ export default function NewRidePage() {
           SAVE RIDE
         </button>
 
-        <a
-          href="/rides"
-          className="text-gray-400 text-xl"
-        >
+        <a href="/rides" className="text-gray-400 text-xl">
           Cancel
         </a>
       </div>
