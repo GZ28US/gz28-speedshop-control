@@ -1,3 +1,6 @@
+# app/page.tsx
+
+```tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -49,6 +52,20 @@ export default function HomePage() {
       <h1 className="text-5xl font-bold mb-10">
         GZ28US Financial CONTROL
       </h1>
+
+      <div className="flex gap-4 mb-10 overflow-x-auto">
+        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold transition-all">
+          CLIENTS
+        </button>
+
+        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold transition-all">
+          RIDES
+        </button>
+
+        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold transition-all">
+          STAFF
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-green-700 rounded-3xl p-6">
