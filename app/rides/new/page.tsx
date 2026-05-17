@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 
@@ -138,6 +139,8 @@ const colorsByConfiguration: Record<string, string[]> = {
 }
 
 export default function NewRidePage() {
+  const router = useRouter()
+
   const [projectCode, setProjectCode] = useState('US.001')
   const [projectName, setProjectName] = useState('')
 
@@ -246,6 +249,7 @@ export default function NewRidePage() {
         {
           project_code: projectCode,
           project_name: projectName,
+          year,
           manufacturer,
           brand,
           model,
@@ -265,7 +269,7 @@ export default function NewRidePage() {
       return
     }
 
-    alert('Ride saved successfully!')
+    router.push('/rides')
   }
 
   return (

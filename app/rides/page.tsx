@@ -6,8 +6,17 @@ import Header from '@/components/Header'
 
 type Ride = {
   id: string
-  name: string
-  code: string | null
+  project_code: string
+  project_name: string | null
+  year: number | null
+  manufacturer: string | null
+  brand: string | null
+  model: string | null
+  version: string | null
+  special_edition: string | null
+  color: string | null
+  vin: string | null
+  plate: string | null
 }
 
 export default function RidesPage() {
@@ -19,11 +28,9 @@ export default function RidesPage() {
 
   async function loadRides() {
     const { data } = await supabase
-      .from('categories')
-      .select('id, name, code')
-      .eq('type', 'expense')
-      .ilike('name', 'US.%')
-      .order('code', { ascending: true })
+      .from('rides')
+      .select('*')
+      .order('updated_at', { ascending: false })
 
     setRides(data || [])
   }
@@ -36,7 +43,7 @@ export default function RidesPage() {
     if (!confirmed) return
 
     const { error } = await supabase
-      .from('categories')
+      .from('rides')
       .delete()
       .eq('id', id)
 
@@ -75,11 +82,33 @@ export default function RidesPage() {
               className="border border-gray-800 rounded-3xl p-5"
             >
               <h3 className="text-2xl font-bold">
-                {ride.name}
+                {ride.project_code} — {ride.project_name || 'No Name'}
               </h3>
 
+              <p className="text-gray-400">
+                {ride.year} {ride.brand} {ride.model}
+              </p>
+
+              <p className="text-gray-400">
+                {ride.version}
+              </p>
+
+              {ride.special_edition && (
+                <p className="text-gray-400">
+                  Special Edition: {ride.special_edition}
+                </p>
+              )}
+
+              <p className="text-gray-400">
+                Color: {ride.color}
+              </p>
+
+              <p className="text-gray-400">
+                VIN: {ride.vin || '-'}
+              </p>
+
               <p className="text-gray-400 mb-5">
-                {ride.code}
+                Plate: {ride.plate || '-'}
               </p>
 
               <div className="flex gap-3">
