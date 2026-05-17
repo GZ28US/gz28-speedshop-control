@@ -77,8 +77,7 @@ function isBotMessage(body: string) {
     'Confirm expense:',
     'Expense saved',
     'Expense canceled.',
-    'Please reply YES to save or NO to cancel.',
-    'Please reply YES to save, NO to cancel, or C to cancel.',
+    'Please reply S to save or C to cancel.',
     'Invalid option. Please choose a number from the list.',
     'Invalid option. Please choose a number from the list, or C to cancel.',
   ].some((botText) => body.startsWith(botText))
@@ -162,7 +161,10 @@ export async function GET() {
   const messages = await response.json()
 
   if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({ success: true, message: 'No messages found' })
+    return NextResponse.json({
+      success: true,
+      message: 'No messages found',
+    })
   }
 
   const userMessages = messages
@@ -252,7 +254,7 @@ export async function GET() {
 
     const send = await sendMessage(
       isReceiptTrigger
-        ? 'Receipt attached ✅\nToday? YES or NO'
+        ? 'Receipt attached ✅\nTransaction date is today? Reply YES or NO'
         : 'Transaction date is today? Reply YES or NO'
     )
 
@@ -260,10 +262,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: isReceiptTrigger
-        ? 'Started expense flow from receipt file'
-        : 'Started expense flow',
-      receipt_file_url: receiptFileUrl,
+      message: 'Started expense flow',
       sent: send,
     })
   }
@@ -450,15 +449,6 @@ export async function GET() {
   }
 
   if (session.current_step === 'amount') {
-    if (normalizedText === 'expense') {
-      await markProcessed(messageId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Ignored duplicate EXPENSE trigger while waiting for amount',
-      })
-    }
-
     const amount = parseAmount(text)
 
     if (!amount) {
@@ -664,7 +654,7 @@ export async function GET() {
       `Category: ${categoryText}\n` +
       receiptLine +
       `Description: ${text}\n\n` +
-      `Reply YES to save, NO to cancel, or C to cancel.`
+      `Reply S to save or C to cancel.`
     )
 
     await markProcessed(messageId)
@@ -677,7 +667,7 @@ export async function GET() {
   }
 
   if (session.current_step === 'confirm') {
-    if (normalizedText === 'yes') {
+    if (normalizedText === 's') {
       await supabase.from('transactions').insert({
         type: 'expense',
         amount: session.amount,
@@ -706,12 +696,8 @@ export async function GET() {
       })
     }
 
-    if (normalizedText === 'no') {
-      return await cancelSession(session.id, messageId)
-    }
-
     const send = await sendMessage(
-      'Please reply YES to save, NO to cancel, or C to cancel.'
+      'Please reply S to save or C to cancel.'
     )
 
     await markProcessed(messageId)
