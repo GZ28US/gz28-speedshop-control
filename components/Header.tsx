@@ -22,9 +22,12 @@ export default function Header() {
           CLIENTS
         </a>
 
-        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold">
+        <a
+          href="/rides"
+          className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold"
+        >
           RIDES
-        </button>
+        </a>
 
         <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold">
           STAFF
