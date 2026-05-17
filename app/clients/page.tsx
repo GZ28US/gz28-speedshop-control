@@ -1,41 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import Header from '@/components/Header'
+import { supabase } from '@/lib/supabase'
 
 type Client = {
   id: string
   name: string
   email: string | null
+  country: string | null
   phone: string | null
+  address: string | null
   city: string | null
   state: string | null
-  country: string | null
-}
-
-function formatPhone(phone: string | null, country: string | null) {
-  if (!phone) return ''
-
-  const numbers = phone.replace(/\D/g, '')
-
-  if (country === 'USA') {
-    const cleaned = numbers.startsWith('1') ? numbers.slice(1) : numbers
-
-    if (cleaned.length >= 10) {
-      return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`
-    }
-  }
-
-  if (country === 'BRAZIL') {
-    const cleaned = numbers.startsWith('55') ? numbers.slice(2) : numbers
-
-    if (cleaned.length >= 10) {
-      return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`
-    }
-  }
-
-  return phone
+  zip: string | null
 }
 
 export default function ClientsPage() {
@@ -49,16 +27,13 @@ export default function ClientsPage() {
     const { data } = await supabase
       .from('clients')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('name', { ascending: true })
 
     setClients(data || [])
   }
 
   async function removeClient(id: string) {
-    const confirmed = confirm(
-      'Are you sure you want to remove this client?'
-    )
-
+    const confirmed = confirm('Are you sure you want to remove this client?')
     if (!confirmed) return
 
     const { error } = await supabase
@@ -79,7 +54,7 @@ export default function ClientsPage() {
       <Header />
 
       <h2 className="text-4xl font-bold mb-8">
-        CLIENTS
+        CLIENTS ({clients.length})
       </h2>
 
       <a
@@ -98,23 +73,25 @@ export default function ClientsPage() {
           clients.map((client) => (
             <div
               key={client.id}
-              className="border border-gray-800 rounded-3xl p-5"
+              className="border border-gray-800 rounded-3xl p-5 flex items-center justify-between gap-5"
             >
-              <h3 className="text-2xl font-bold">
-                {client.name}
-              </h3>
+              <div>
+                <h3 className="text-2xl font-bold">
+                  {client.name}
+                </h3>
 
-              <p className="text-gray-400">
-                {client.email}
-              </p>
+                <p className="text-gray-400">
+                  {client.email || '-'}
+                </p>
 
-              <p className="text-gray-400">
-                {formatPhone(client.phone, client.country)}
-              </p>
+                <p className="text-gray-400">
+                  {client.phone || '-'}
+                </p>
 
-              <p className="text-gray-400 mb-5">
-                {client.city} {client.state}
-              </p>
+                <p className="text-gray-400">
+                  {client.city || '-'}, {client.state || '-'} {client.zip || ''}
+                </p>
+              </div>
 
               <div className="flex gap-3">
                 <a
