@@ -32,7 +32,7 @@ type Expense = {
   expense_date: string
   supplier: string
   item: string
-  price: string
+  amount: string
   payment_date: string
 }
 
@@ -69,9 +69,9 @@ export default function NewInvoicePage() {
   const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
   const [editingNote, setEditingNote] = useState('')
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [newExpense, setNewExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+  const [newExpense, setNewExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
   const [editingExpenseIndex, setEditingExpenseIndex] = useState<number | null>(null)
-  const [editingExpense, setEditingExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+  const [editingExpense, setEditingExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
 
   useEffect(() => { loadRide() }, [])
 
@@ -168,17 +168,17 @@ export default function NewInvoicePage() {
 
   // Expenses
   function addExpense() {
-    if (!newExpense.item || !newExpense.price) { alert('Please enter at least item and price'); return }
-    setExpenses([...expenses, newExpense]); setNewExpense({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+    if (!newExpense.item || !newExpense.amount) { alert('Please enter at least item and amount'); return }
+    setExpenses([...expenses, newExpense]); setNewExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
   }
   function removeExpense(index: number) { setExpenses(expenses.filter((_, i) => i !== index)) }
   function startEditExpense(index: number) { setEditingExpenseIndex(index); setEditingExpense({ ...expenses[index] }) }
   function saveEditExpense() {
-    if (!editingExpense.item || !editingExpense.price) { alert('Please enter at least item and price'); return }
+    if (!editingExpense.item || !editingExpense.amount) { alert('Please enter at least item and amount'); return }
     const updated = [...expenses]; updated[editingExpenseIndex!] = editingExpense; setExpenses(updated)
-    setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+    setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
   }
-  function cancelEditExpense() { setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' }) }
+  function cancelEditExpense() { setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' }) }
 
   // Calculations
   const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
@@ -193,14 +193,72 @@ export default function NewInvoicePage() {
   const totalPaid = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
   const balance = totalPaid - grandTotal
 
-  const expensesTotalGlobal = expenses.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0)
-  const expensesTotalPaid = expenses.filter(e => isValidDate(e.payment_date)).reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0)
-  const expensesBalance = expensesTotalPaid - expensesTotalGlobal
+  // Pre-added expenses: Florida State Taxes + all parts
+  const preExpenses: Expense[] = [
+    {
+      expense_date: isValidDate(entryDate) ? entryDate : '',
+      supplier: 'Florida State',
+      item: 'Taxes',
+      amount: floridaTaxesAmount.toFixed(2),
+      payment_date: '',
+    },
+    ...parts.map(p => ({
+      expense_date: isValidDate(entryDate) ? entryDate : '',
+      supplier: '',
+      item: p.description,
+      amount: getPartTotal(p).toFixed(2),
+      payment_date: '',
+    })),
+  ]
 
+  // For display, we track editability of pre-expenses separately
+  const [editingPreExpenseIndex, setEditingPreExpenseIndex] = useState<number | null>(null)
+  const [editingPreExpense, setEditingPreExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
+  const [preExpenseOverrides, setPreExpenseOverrides] = useState<(Expense | null)[]>([])
+  const [removedPreExpenses, setRemovedPreExpenses] = useState<number[]>([])
+
+  // Merge pre-expenses with overrides
+  const displayPreExpenses = preExpenses.map((pe, i) => {
+    if (removedPreExpenses.includes(i)) return null
+    return preExpenseOverrides[i] ?? pe
+  })
+
+  function startEditPreExpense(index: number) {
+    setEditingPreExpenseIndex(index)
+    setEditingPreExpense(displayPreExpenses[index]!)
+  }
+  function saveEditPreExpense() {
+    const updated = [...preExpenseOverrides]
+    while (updated.length <= editingPreExpenseIndex!) updated.push(null)
+    updated[editingPreExpenseIndex!] = editingPreExpense
+    setPreExpenseOverrides(updated)
+    setEditingPreExpenseIndex(null)
+    setEditingPreExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
+  }
+  function cancelEditPreExpense() {
+    setEditingPreExpenseIndex(null)
+    setEditingPreExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
+  }
+  function removePreExpense(index: number) {
+    setRemovedPreExpenses([...removedPreExpenses, index])
+  }
+
+  const allExpensesForTotals = [
+    ...displayPreExpenses.filter(Boolean) as Expense[],
+    ...expenses,
+  ]
+  const expensesTotalGlobal = allExpensesForTotals.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0)
+  const expensesTotalPaid = allExpensesForTotals.filter(e => isValidDate(e.payment_date)).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0)
+  const expensesBalance = expensesTotalPaid - expensesTotalGlobal
   const currentProfit = totalPaid - expensesTotalPaid
   const currentProfitPct = totalPaid > 0 ? (currentProfit / totalPaid) * 100 : 0
   const finalProfit = grandTotal - expensesTotalGlobal
   const finalProfitPct = grandTotal > 0 ? (finalProfit / grandTotal) * 100 : 0
+  const profitColor = (val: number) => val < 0 ? 'text-red-500' : 'text-blue-400'
+
+  function expenseRowColor(exp: Expense) {
+    return isValidDate(exp.payment_date) ? 'text-blue-400' : 'text-red-400'
+  }
 
   async function saveInvoice() {
     const { data: invoice, error } = await supabase.from('invoices').insert([{
@@ -231,13 +289,15 @@ export default function NewInvoicePage() {
       const { error: e } = await supabase.from('invoice_notes').insert(notes.map(n => ({ invoice_id: invoice.id, note: n.note })))
       if (e) { alert(e.message); return }
     }
-    if (expenses.length > 0) {
-      const { error: e } = await supabase.from('invoice_expenses').insert(expenses.map(ex => ({
+
+    const allExpensesToSave = [...allExpensesForTotals]
+    if (allExpensesToSave.length > 0) {
+      const { error: e } = await supabase.from('invoice_expenses').insert(allExpensesToSave.map(ex => ({
         invoice_id: invoice.id,
         expense_date: isValidDate(ex.expense_date) ? ex.expense_date : null,
         supplier: ex.supplier || null,
         item: ex.item,
-        price: parseFloat(ex.price),
+        price: parseFloat(ex.amount) || 0,
         payment_date: isValidDate(ex.payment_date) ? ex.payment_date : null,
       })))
       if (e) { alert(e.message); return }
@@ -249,8 +309,6 @@ export default function NewInvoicePage() {
   const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
   const smallInputClass = 'bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg'
   const selectClass = 'bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg'
-
-  const profitColor = (val: number) => val < 0 ? 'text-red-500' : 'text-blue-400'
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -284,18 +342,15 @@ export default function NewInvoicePage() {
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
                 <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                   <input type="number" min="0" step="0.01" placeholder="0.00" value={newPart.unit_price} onChange={(e) => setNewPart({ ...newPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
                 <input type="number" min="1" step="1" placeholder="1" value={newPart.quantity} onChange={(e) => setNewPart({ ...newPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
               </div>
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">TOTAL</label>
                 <div className={`${smallInputClass} w-full opacity-50`}>{newPart.unit_price && newPart.quantity ? formatUSD(parseFloat(newPart.unit_price || '0') * parseFloat(newPart.quantity || '0')) : '$0.00'}</div>
               </div>
             </div>
@@ -366,7 +421,7 @@ export default function NewInvoicePage() {
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <input type="text" placeholder="Description" value={newService.description} onChange={(e) => setNewService({ ...newService, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
-              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">PRICE</label>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                 <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                   <input type="number" min="0" step="0.01" placeholder="0.00" value={newService.price} onChange={(e) => setNewService({ ...newService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                 </div>
@@ -381,7 +436,7 @@ export default function NewInvoicePage() {
                       <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
                         <input type="text" placeholder="Description" value={editingService.description} onChange={(e) => setEditingService({ ...editingService, description: e.target.value })} className={inputClass} />
                         <div className="flex gap-3">
-                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">PRICE</label>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                             <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                               <input type="number" min="0" step="0.01" value={editingService.price} onChange={(e) => setEditingService({ ...editingService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                             </div>
@@ -504,108 +559,6 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
-        {/* EXPENSES SECTION */}
-        <div>
-          <label className="block mb-3 text-lg font-bold">EXPENSES</label>
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
-            <DatePicker label="DATE" value={newExpense.expense_date} onChange={(v) => setNewExpense({ ...newExpense, expense_date: v })} />
-            <div>
-              <label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
-              <input type="text" placeholder="Supplier (optional)" value={newExpense.supplier} onChange={(e) => setNewExpense({ ...newExpense, supplier: e.target.value })} className={inputClass} />
-            </div>
-            <div>
-              <label className="block mb-1 text-sm text-gray-400">ITEM</label>
-              <input type="text" placeholder="Item description" value={newExpense.item} onChange={(e) => setNewExpense({ ...newExpense, item: e.target.value })} className={inputClass} />
-            </div>
-            <div>
-              <label className="block mb-1 text-sm text-gray-400">PRICE</label>
-              <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                <input type="number" min="0" step="0.01" placeholder="0.00" value={newExpense.price} onChange={(e) => setNewExpense({ ...newExpense, price: e.target.value })} className={`${inputClass} pl-10`} />
-              </div>
-            </div>
-            <DatePicker label="PAYMENT DATE" value={newExpense.payment_date} onChange={(v) => setNewExpense({ ...newExpense, payment_date: v })} />
-            <button onClick={addExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD EXPENSE</button>
-
-            {expenses.length > 0 && (
-              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
-                {expenses.map((exp, index) => (
-                  <div key={index}>
-                    {editingExpenseIndex === index ? (
-                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
-                        <DatePicker label="DATE" value={editingExpense.expense_date} onChange={(v) => setEditingExpense({ ...editingExpense, expense_date: v })} />
-                        <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
-                          <input type="text" value={editingExpense.supplier} onChange={(e) => setEditingExpense({ ...editingExpense, supplier: e.target.value })} className={inputClass} />
-                        </div>
-                        <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
-                          <input type="text" value={editingExpense.item} onChange={(e) => setEditingExpense({ ...editingExpense, item: e.target.value })} className={inputClass} />
-                        </div>
-                        <div><label className="block mb-1 text-sm text-gray-400">PRICE</label>
-                          <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                            <input type="number" min="0" step="0.01" value={editingExpense.price} onChange={(e) => setEditingExpense({ ...editingExpense, price: e.target.value })} className={`${inputClass} pl-10`} />
-                          </div>
-                        </div>
-                        <DatePicker label="PAYMENT DATE" value={editingExpense.payment_date} onChange={(v) => setEditingExpense({ ...editingExpense, payment_date: v })} />
-                        <div className="flex gap-3">
-                          <button onClick={saveEditExpense} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
-                          <button onClick={cancelEditExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < expenses.length - 1 ? 'border-b border-gray-700' : ''}`}>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-bold truncate">{exp.item}</p>
-                          <p className="text-sm text-gray-400">
-                            {formatUSD(parseFloat(exp.price))}
-                            {exp.supplier ? ` — ${exp.supplier}` : ''}
-                            {isValidDate(exp.expense_date) ? ` — ${formatDate(exp.expense_date)}` : ''}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {isValidDate(exp.payment_date) ? `Paid: ${formatDate(exp.payment_date)}` : 'Not paid yet'}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 shrink-0">
-                          <button onClick={() => startEditExpense(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
-                          <button onClick={() => removeExpense(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Expenses totals */}
-            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
-              <span className="text-gray-400 font-bold">TOTAL GLOBAL</span>
-              <span className="text-xl font-bold">{formatUSD(expensesTotalGlobal)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 font-bold">TOTAL PAID</span>
-              <span className="text-xl font-bold">{formatUSD(expensesTotalPaid)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-lg">BALANCE</span>
-              <span className={`text-2xl font-bold ${expensesBalance < 0 ? 'text-red-500' : 'text-blue-400'}`}>{formatUSD(expensesBalance)}</span>
-            </div>
-
-            {/* Profit reports */}
-            <div className="border-t border-gray-700 pt-3 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400 font-bold">CURRENT PROFIT</span>
-                <span className={`text-xl font-bold ${profitColor(currentProfit)}`}>
-                  {formatUSD(currentProfit)} / {currentProfitPct.toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-lg">FINAL PROFIT</span>
-                <span className={`text-2xl font-bold ${profitColor(finalProfit)}`}>
-                  {formatUSD(finalProfit)} / {finalProfitPct.toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* NOTES SECTION */}
         <div>
           <label className="block mb-3 text-lg font-bold">NOTES</label>
@@ -637,6 +590,152 @@ export default function NewInvoicePage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* EXPENSES SECTION */}
+        <div>
+          <label className="block mb-3 text-lg font-bold">EXPENSES</label>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+
+            {/* Add form */}
+            <DatePicker label="DATE" value={newExpense.expense_date} onChange={(v) => setNewExpense({ ...newExpense, expense_date: v })} />
+            <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
+              <input type="text" placeholder="Supplier (optional)" value={newExpense.supplier} onChange={(e) => setNewExpense({ ...newExpense, supplier: e.target.value })} className={inputClass} />
+            </div>
+            <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
+              <input type="text" placeholder="Item description" value={newExpense.item} onChange={(e) => setNewExpense({ ...newExpense, item: e.target.value })} className={inputClass} />
+            </div>
+            <div><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+              <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                <input type="number" min="0" step="0.01" placeholder="0.00" value={newExpense.amount} onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })} className={`${inputClass} pl-10`} />
+              </div>
+            </div>
+            <DatePicker label="PAYMENT DATE" value={newExpense.payment_date} onChange={(v) => setNewExpense({ ...newExpense, payment_date: v })} />
+            <button onClick={addExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD EXPENSE</button>
+
+            {/* All expenses list */}
+            <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+
+              {/* Pre-added expenses (Florida State + Parts) */}
+              {displayPreExpenses.map((exp, index) => {
+                if (!exp) return null
+                const isPaid = isValidDate(exp.payment_date)
+                const rowColor = isPaid ? 'text-blue-400' : 'text-red-400'
+                const isLast = index === displayPreExpenses.filter(Boolean).length - 1 && expenses.length === 0
+
+                return (
+                  <div key={`pre-${index}`}>
+                    {editingPreExpenseIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <DatePicker label="DATE" value={editingPreExpense.expense_date} onChange={(v) => setEditingPreExpense({ ...editingPreExpense, expense_date: v })} />
+                        <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
+                          <input type="text" value={editingPreExpense.supplier} onChange={(e) => setEditingPreExpense({ ...editingPreExpense, supplier: e.target.value })} className={inputClass} />
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
+                          <input type="text" value={editingPreExpense.item} onChange={(e) => setEditingPreExpense({ ...editingPreExpense, item: e.target.value })} className={inputClass} />
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+                          <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                            <input type="number" min="0" step="0.01" value={editingPreExpense.amount} onChange={(e) => setEditingPreExpense({ ...editingPreExpense, amount: e.target.value })} className={`${inputClass} pl-10`} />
+                          </div>
+                        </div>
+                        <DatePicker label="PAYMENT DATE" value={editingPreExpense.payment_date} onChange={(v) => setEditingPreExpense({ ...editingPreExpense, payment_date: v })} />
+                        <div className="flex gap-3">
+                          <button onClick={saveEditPreExpense} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditPreExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${!isLast ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-base font-bold truncate ${rowColor}`}>{exp.item}{exp.supplier ? ` — ${exp.supplier}` : ''}</p>
+                          <p className={`text-sm ${rowColor}`}>
+                            {formatUSD(parseFloat(exp.amount))}
+                            {isValidDate(exp.expense_date) ? ` — ${formatDate(exp.expense_date)}` : ''}
+                          </p>
+                          <p className="text-sm text-gray-500">{isPaid ? `Paid: ${formatDate(exp.payment_date)}` : 'Not paid yet'}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditPreExpense(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removePreExpense(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* User-added expenses */}
+              {expenses.map((exp, index) => {
+                const isPaid = isValidDate(exp.payment_date)
+                const rowColor = isPaid ? 'text-blue-400' : 'text-red-400'
+                return (
+                  <div key={`user-${index}`}>
+                    {editingExpenseIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <DatePicker label="DATE" value={editingExpense.expense_date} onChange={(v) => setEditingExpense({ ...editingExpense, expense_date: v })} />
+                        <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
+                          <input type="text" value={editingExpense.supplier} onChange={(e) => setEditingExpense({ ...editingExpense, supplier: e.target.value })} className={inputClass} />
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
+                          <input type="text" value={editingExpense.item} onChange={(e) => setEditingExpense({ ...editingExpense, item: e.target.value })} className={inputClass} />
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+                          <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                            <input type="number" min="0" step="0.01" value={editingExpense.amount} onChange={(e) => setEditingExpense({ ...editingExpense, amount: e.target.value })} className={`${inputClass} pl-10`} />
+                          </div>
+                        </div>
+                        <DatePicker label="PAYMENT DATE" value={editingExpense.payment_date} onChange={(v) => setEditingExpense({ ...editingExpense, payment_date: v })} />
+                        <div className="flex gap-3">
+                          <button onClick={saveEditExpense} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < expenses.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-base font-bold truncate ${rowColor}`}>{exp.item}{exp.supplier ? ` — ${exp.supplier}` : ''}</p>
+                          <p className={`text-sm ${rowColor}`}>
+                            {formatUSD(parseFloat(exp.amount))}
+                            {isValidDate(exp.expense_date) ? ` — ${formatDate(exp.expense_date)}` : ''}
+                          </p>
+                          <p className="text-sm text-gray-500">{isPaid ? `Paid: ${formatDate(exp.payment_date)}` : 'Not paid yet'}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditExpense(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removeExpense(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Expenses totals */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="text-gray-400 font-bold">TOTAL GLOBAL</span>
+              <span className="text-xl font-bold">{formatUSD(expensesTotalGlobal)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 font-bold">TOTAL PAID</span>
+              <span className="text-xl font-bold">{formatUSD(expensesTotalPaid)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-lg">BALANCE</span>
+              <span className={`text-2xl font-bold ${expensesBalance < 0 ? 'text-red-500' : 'text-blue-400'}`}>{formatUSD(expensesBalance)}</span>
+            </div>
+            <div className="border-t border-gray-700 pt-3 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400 font-bold">CURRENT PROFIT</span>
+                <span className={`text-xl font-bold ${profitColor(currentProfit)}`}>{formatUSD(currentProfit)} / {currentProfitPct.toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-lg">FINAL PROFIT</span>
+                <span className={`text-2xl font-bold ${profitColor(finalProfit)}`}>{formatUSD(finalProfit)} / {finalProfitPct.toFixed(1)}%</span>
+              </div>
+            </div>
           </div>
         </div>
 
