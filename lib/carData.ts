@@ -152,9 +152,14 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2017: ['1500 5.7', '1500 Rebel 5.7'], 2018: ['1500 5.7', '1500 Rebel 5.7'],
   },
   F150: {
-    2017: ['SuperSnake 5.0L SC'], 2018: ['SuperSnake 5.0L SC'], 2019: ['SuperSnake 5.0L SC'],
-    2020: ['SuperSnake 5.0L SC'], 2021: ['SuperSnake 5.0L SC'], 2022: ['SuperSnake 5.0L SC'],
-    2023: ['SuperSnake 5.0L SC'], 2024: ['SuperSnake 5.0L SC'],
+    2017: ['SuperSnake 5.0L SC'],
+    2018: ['SuperSnake 5.0L SC', '5.0L V8'],
+    2019: ['SuperSnake 5.0L SC', '5.0L V8'],
+    2020: ['SuperSnake 5.0L SC', '5.0L V8'],
+    2021: ['SuperSnake 5.0L SC', '5.0L V8'],
+    2022: ['SuperSnake 5.0L SC', '5.0L V8'],
+    2023: ['SuperSnake 5.0L SC', '5.0L V8', '5.2L SC V8 Raptor R'],
+    2024: ['SuperSnake 5.0L SC', '5.0L V8', '5.2L SC V8 Raptor R'],
   },
 }
 
@@ -211,6 +216,8 @@ const corvetteColorsByYear: Record<number, string[]> = {
   2026: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Competition Yellow', 'Hysteria Purple', 'Rapid Blue', 'Red Mist', 'Riptide Blue', 'Roswell Green', 'Sebring Orange', 'Torch Red'],
 }
 
+const raptorRColors = ['Agate Black', 'Oxford White', 'Rapid Red', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver']
+
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
@@ -224,6 +231,8 @@ const colorsByConfiguration: Record<string, string[]> = {
   '2025-DURANGO-SRT HellCat 6.2-Brass Monkey': ['Red Oxide'],
   '2026-DURANGO-SRT HellCat 6.2-None': durangoColors2026,
   '2026-DURANGO-SRT HellCat 6.2-JailBreak': durangoColors2026JailBreak,
+  '2023-F150-5.2L SC V8 Raptor R-None': raptorRColors,
+  '2024-F150-5.2L SC V8 Raptor R-None': raptorRColors,
 }
 
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
