@@ -18,6 +18,7 @@ type Ride = {
 export default function RidesPage() {
   const [rides, setRides] = useState<Ride[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     loadRides()
@@ -27,9 +28,7 @@ export default function RidesPage() {
     const { data, error } = await supabase
       .from('rides')
       .select('*')
-      .order('updated_at', {
-        ascending: false,
-      })
+      .order('updated_at', { ascending: false })
 
     if (error) {
       console.error(error)
@@ -42,12 +41,6 @@ export default function RidesPage() {
   }
 
   async function removeRide(id: string) {
-    const confirmed = confirm(
-      'Remove this ride?'
-    )
-
-    if (!confirmed) return
-
     const { error } = await supabase
       .from('rides')
       .delete()
@@ -58,12 +51,37 @@ export default function RidesPage() {
       return
     }
 
+    setConfirmId(null)
     loadRides()
   }
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
+
+      {/* Custom confirm modal */}
+      {confirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-3xl p-8 max-w-sm w-full mx-4">
+            <h2 className="text-2xl font-bold mb-2">Remove Ride</h2>
+            <p className="text-gray-400 text-lg mb-8">Are you sure you want to remove this ride? This action cannot be undone.</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 px-5 py-4 rounded-2xl font-bold text-xl"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => removeRide(confirmId)}
+                className="flex-1 bg-red-700 hover:bg-red-600 px-5 py-4 rounded-2xl font-bold text-xl"
+              >
+                REMOVE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold">
@@ -79,13 +97,9 @@ export default function RidesPage() {
       </div>
 
       {loading ? (
-        <p className="text-2xl text-gray-400">
-          Loading...
-        </p>
+        <p className="text-2xl text-gray-400">Loading...</p>
       ) : rides.length === 0 ? (
-        <p className="text-2xl text-gray-400">
-          No rides found.
-        </p>
+        <p className="text-2xl text-gray-400">No rides found.</p>
       ) : (
         <div className="space-y-5">
           {rides.map((ride) => (
@@ -95,8 +109,7 @@ export default function RidesPage() {
             >
               <div>
                 <h2 className="text-2xl font-bold">
-                  {ride.project_code} —{' '}
-                  {ride.project_name}
+                  {ride.project_code} — {ride.project_name}
                 </h2>
 
                 <p className="text-lg text-gray-400">
@@ -131,9 +144,7 @@ export default function RidesPage() {
                 </button>
 
                 <button
-                  onClick={() =>
-                    removeRide(ride.id)
-                  }
+                  onClick={() => setConfirmId(ride.id)}
                   className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
                 >
                   REMOVE
