@@ -18,6 +18,14 @@ type Service = {
   price: string
 }
 
+type Payment = {
+  amount: string
+  payment_date: string
+  source: string
+}
+
+const paymentSources = ['CASH', 'ACH', 'ZELLE', 'CHECK']
+
 export default function NewInvoicePage() {
   const params = useParams()
   const router = useRouter()
@@ -40,6 +48,10 @@ export default function NewInvoicePage() {
   const [newService, setNewService] = useState<Service>({ description: '', price: '' })
   const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null)
   const [editingService, setEditingService] = useState<Service>({ description: '', price: '' })
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [newPayment, setNewPayment] = useState<Payment>({ amount: '', payment_date: '', source: 'CASH' })
+  const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
+  const [editingPayment, setEditingPayment] = useState<Payment>({ amount: '', payment_date: '', source: 'CASH' })
 
   useEffect(() => { loadRide() }, [])
 
@@ -75,8 +87,7 @@ export default function NewInvoicePage() {
   // Parts
   function addPart() {
     if (!newPart.description || !newPart.unit_price || !newPart.quantity) { alert('Please fill in all part fields'); return }
-    setParts([...parts, newPart])
-    setNewPart({ description: '', unit_price: '', quantity: '1' })
+    setParts([...parts, newPart]); setNewPart({ description: '', unit_price: '', quantity: '1' })
   }
   function removePart(index: number) { setParts(parts.filter((_, i) => i !== index)) }
   function startEditPart(index: number) { setEditingPartIndex(index); setEditingPart({ ...parts[index] }) }
@@ -91,8 +102,7 @@ export default function NewInvoicePage() {
   // Services
   function addService() {
     if (!newService.description) { alert('Please enter a description'); return }
-    setServices([...services, newService])
-    setNewService({ description: '', price: '' })
+    setServices([...services, newService]); setNewService({ description: '', price: '' })
   }
   function removeService(index: number) { setServices(services.filter((_, i) => i !== index)) }
   function startEditService(index: number) { setEditingServiceIndex(index); setEditingService({ ...services[index] }) }
@@ -102,6 +112,20 @@ export default function NewInvoicePage() {
     setEditingServiceIndex(null); setEditingService({ description: '', price: '' })
   }
   function cancelEditService() { setEditingServiceIndex(null); setEditingService({ description: '', price: '' }) }
+
+  // Payments
+  function addPayment() {
+    if (!newPayment.amount) { alert('Please enter an amount'); return }
+    setPayments([...payments, newPayment]); setNewPayment({ amount: '', payment_date: '', source: 'CASH' })
+  }
+  function removePayment(index: number) { setPayments(payments.filter((_, i) => i !== index)) }
+  function startEditPayment(index: number) { setEditingPaymentIndex(index); setEditingPayment({ ...payments[index] }) }
+  function saveEditPayment() {
+    if (!editingPayment.amount) { alert('Please enter an amount'); return }
+    const updated = [...payments]; updated[editingPaymentIndex!] = editingPayment; setPayments(updated)
+    setEditingPaymentIndex(null); setEditingPayment({ amount: '', payment_date: '', source: 'CASH' })
+  }
+  function cancelEditPayment() { setEditingPaymentIndex(null); setEditingPayment({ amount: '', payment_date: '', source: 'CASH' }) }
 
   // Calculations
   const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
@@ -113,6 +137,8 @@ export default function NewInvoicePage() {
   const globalDiscountPct = parseFloat(globalDiscount) || 0
   const globalDiscountAmount = partsAndServicesTotal * (globalDiscountPct / 100)
   const grandTotal = partsAndServicesTotal - globalDiscountAmount
+  const totalPaid = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
+  const balance = totalPaid - grandTotal
 
   async function saveInvoice() {
     const { data: invoice, error } = await supabase.from('invoices').insert([{
@@ -142,11 +168,22 @@ export default function NewInvoicePage() {
       if (e) { alert(e.message); return }
     }
 
+    if (payments.length > 0) {
+      const { error: e } = await supabase.from('invoice_payments').insert(payments.map(p => ({
+        invoice_id: invoice.id,
+        amount: parseFloat(p.amount),
+        payment_date: isValidDate(p.payment_date) ? p.payment_date : null,
+        source: p.source,
+      })))
+      if (e) { alert(e.message); return }
+    }
+
     router.push(`/rides/${rideId}/invoices`)
   }
 
   const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
   const smallInputClass = 'bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg'
+  const selectClass = 'bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg'
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -178,8 +215,6 @@ export default function NewInvoicePage() {
         <div>
           <label className="block mb-3 text-lg font-bold">PARTS</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
-
-            {/* Add form */}
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -201,8 +236,6 @@ export default function NewInvoicePage() {
               </div>
             </div>
             <button onClick={addPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PART</button>
-
-            {/* Parts list */}
             {parts.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {parts.map((part, index) => (
@@ -248,30 +281,18 @@ export default function NewInvoicePage() {
                 ))}
               </div>
             )}
-
-            {/* Parts sub-total */}
             <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
               <span className="text-gray-400 font-bold">PARTS SUB-TOTAL</span>
               <span className="text-xl font-bold">{formatUSD(partsSubTotal)}</span>
             </div>
-
-            {/* Florida Parts Taxes */}
             <div className="flex items-center gap-3">
               <span className="text-gray-400 font-bold whitespace-nowrap">FLORIDA PARTS TAXES</span>
               <div className="relative w-28">
-                <input
-                  type="number" min="0" max="100" step="0.01"
-                  value={floridaTaxes}
-                  onChange={(e) => setFloridaTaxes(e.target.value)}
-                  className={`${smallInputClass} w-full pr-6`}
-                  placeholder="0.00"
-                />
+                <input type="number" min="0" max="100" step="0.01" value={floridaTaxes} onChange={(e) => setFloridaTaxes(e.target.value)} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
               </div>
               <span className="text-xl font-bold ml-auto">{formatUSD(floridaTaxesAmount)}</span>
             </div>
-
-            {/* Parts total */}
             <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
               <span className="font-bold text-lg">PARTS TOTAL</span>
               <span className="text-2xl font-bold">{formatUSD(partsTotal)}</span>
@@ -294,8 +315,6 @@ export default function NewInvoicePage() {
               </div>
             </div>
             <button onClick={addService} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD SERVICE</button>
-
-            {/* Services list */}
             {services.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {services.map((svc, index) => (
@@ -333,8 +352,6 @@ export default function NewInvoicePage() {
                 ))}
               </div>
             )}
-
-            {/* Services total */}
             <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
               <span className="font-bold text-lg">SERVICES TOTAL</span>
               <span className="text-2xl font-bold">{formatUSD(servicesTotal)}</span>
@@ -348,31 +365,96 @@ export default function NewInvoicePage() {
             <span className="text-gray-400 font-bold">PARTS + SERVICES TOTAL</span>
             <span className="text-xl font-bold">{formatUSD(partsAndServicesTotal)}</span>
           </div>
-
           <div className="flex items-center gap-3">
             <span className="text-gray-400 font-bold whitespace-nowrap">GLOBAL DISCOUNT</span>
             <div className="relative w-28">
-              <input
-                type="number" min="0" max="100" step="0.01"
-                value={globalDiscount}
-                onChange={(e) => setGlobalDiscount(e.target.value)}
-                className={`${smallInputClass} w-full pr-6`}
-                placeholder="0.00"
-              />
+              <input type="number" min="0" max="100" step="0.01" value={globalDiscount} onChange={(e) => setGlobalDiscount(e.target.value)} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
             </div>
             <span className="text-xl font-bold ml-auto text-red-400">- {formatUSD(globalDiscountAmount)}</span>
           </div>
-
           <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
             <span className="font-bold text-xl">GRAND TOTAL</span>
             <span className="text-3xl font-bold">{formatUSD(grandTotal)}</span>
           </div>
         </div>
 
+        {/* PAYMENTS SECTION */}
         <div>
-          <label className="block mb-2 text-lg font-bold">ADD PAYMENT</label>
-          <button className="w-full bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-2xl text-xl font-bold text-left" onClick={() => alert('Coming soon')}>+ ADD PAYMENT</button>
+          <label className="block mb-3 text-lg font-bold">PAYMENTS</label>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <input type="number" min="0" step="0.01" placeholder="0.00" value={newPayment.amount} onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                </div>
+              </div>
+              <div className="flex-1">
+                <label className="block mb-1 text-sm text-gray-400">SOURCE</label>
+                <select value={newPayment.source} onChange={(e) => setNewPayment({ ...newPayment, source: e.target.value })} className={`${selectClass} w-full`}>
+                  {paymentSources.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+            <DatePicker label="DATE" value={newPayment.payment_date} onChange={(v) => setNewPayment({ ...newPayment, payment_date: v })} />
+            <button onClick={addPayment} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PAYMENT</button>
+
+            {payments.length > 0 && (
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+                {payments.map((payment, index) => (
+                  <div key={index}>
+                    {editingPaymentIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                              <input type="number" min="0" step="0.01" value={editingPayment.amount} onChange={(e) => setEditingPayment({ ...editingPayment, amount: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <label className="block mb-1 text-sm text-gray-400">SOURCE</label>
+                            <select value={editingPayment.source} onChange={(e) => setEditingPayment({ ...editingPayment, source: e.target.value })} className={`${selectClass} w-full`}>
+                              {paymentSources.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <DatePicker label="DATE" value={editingPayment.payment_date} onChange={(v) => setEditingPayment({ ...editingPayment, payment_date: v })} />
+                        <div className="flex gap-3">
+                          <button onClick={saveEditPayment} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditPayment} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < payments.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold">{formatUSD(parseFloat(payment.amount))}</p>
+                          <p className="text-sm text-gray-400">{payment.source}{payment.payment_date ? ` — ${new Date(payment.payment_date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditPayment(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removePayment(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Total paid & balance */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="text-gray-400 font-bold">TOTAL PAID</span>
+              <span className="text-xl font-bold">{formatUSD(totalPaid)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-lg">BALANCE</span>
+              <span className={`text-2xl font-bold ${balance < 0 ? 'text-red-500' : 'text-blue-400'}`}>{formatUSD(balance)}</span>
+            </div>
+          </div>
         </div>
 
         <div>
