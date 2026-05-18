@@ -360,7 +360,7 @@ export default function NewInvoicePage() {
                       <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < services.length - 1 ? 'border-b border-gray-700' : ''}`}>
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-bold truncate">{svc.description}</p>
-                          <p className="text-sm text-gray-400">{formatUSD(parseFloat(svc.price))}</p>
+                          <p className="text-sm text-gray-400">{parseFloat(svc.price) === 0 ? 'COURTESY' : formatUSD(parseFloat(svc.price))}</p>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button onClick={() => startEditService(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
