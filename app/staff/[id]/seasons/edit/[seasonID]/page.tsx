@@ -10,7 +10,7 @@ export default function EditSeasonPage() {
   const params = useParams()
   const router = useRouter()
   const staffId = String(params.id)
-  const seasonId = String(params.seasonId)
+  const seasonId = String(params.seasonID)
 
   const [loading, setLoading] = useState(true)
   const [staffName, setStaffName] = useState('')
