@@ -35,6 +35,7 @@ export default function NewSeasonPage() {
     const { data } = await supabase
       .from('seasons')
       .select('season_code')
+      .eq('staff_id', staffId)
 
     const usedNumbers = data?.map((item) => {
       const match = item.season_code?.match(/US\.(\d+)/)
