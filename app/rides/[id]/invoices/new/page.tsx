@@ -29,6 +29,8 @@ export default function NewInvoicePage() {
   const [globalDiscount, setGlobalDiscount] = useState('')
   const [parts, setParts] = useState<Part[]>([])
   const [newPart, setNewPart] = useState<Part>({ description: '', unit_price: '', quantity: '1' })
+  const [editingPartIndex, setEditingPartIndex] = useState<number | null>(null)
+  const [editingPart, setEditingPart] = useState<Part>({ description: '', unit_price: '', quantity: '1' })
 
   useEffect(() => {
     loadRide()
@@ -71,9 +73,9 @@ export default function NewInvoicePage() {
 
   function formatMileage(value: string) {
     const clean = value.replace(/[^0-9.]/g, '')
-    const parts = clean.split('.')
-    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart
+    const partsArr = clean.split('.')
+    const intPart = partsArr[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return partsArr.length > 1 ? `${intPart}.${partsArr[1]}` : intPart
   }
 
   function addPart() {
@@ -87,6 +89,28 @@ export default function NewInvoicePage() {
 
   function removePart(index: number) {
     setParts(parts.filter((_, i) => i !== index))
+  }
+
+  function startEditPart(index: number) {
+    setEditingPartIndex(index)
+    setEditingPart({ ...parts[index] })
+  }
+
+  function saveEditPart() {
+    if (!editingPart.description || !editingPart.unit_price || !editingPart.quantity) {
+      alert('Please fill in all part fields')
+      return
+    }
+    const updated = [...parts]
+    updated[editingPartIndex!] = editingPart
+    setParts(updated)
+    setEditingPartIndex(null)
+    setEditingPart({ description: '', unit_price: '', quantity: '1' })
+  }
+
+  function cancelEditPart() {
+    setEditingPartIndex(null)
+    setEditingPart({ description: '', unit_price: '', quantity: '1' })
   }
 
   function getPartTotal(part: Part) {
@@ -156,17 +180,8 @@ export default function NewInvoicePage() {
           />
         </div>
 
-        <DatePicker
-          label="ENTRY DATE"
-          value={entryDate}
-          onChange={setEntryDate}
-        />
-
-        <DatePicker
-          label="DELIVERY DATE"
-          value={deliveryDate}
-          onChange={setDeliveryDate}
-        />
+        <DatePicker label="ENTRY DATE" value={entryDate} onChange={setEntryDate} />
+        <DatePicker label="DELIVERY DATE" value={deliveryDate} onChange={setDeliveryDate} />
 
         <div>
           <label className="block mb-2 text-lg font-bold">MILEAGE</label>
@@ -248,23 +263,92 @@ export default function NewInvoicePage() {
             </button>
           </div>
 
-          {/* Added parts list — shown below the input box */}
+          {/* Added parts list */}
           {parts.length > 0 && (
             <div className="space-y-3 mt-4">
               {parts.map((part, index) => (
-                <div key={index} className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-lg font-bold">{part.description}</p>
-                    <p className="text-gray-400">
-                      {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removePart(index)}
-                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
-                  >
-                    REMOVE
-                  </button>
+                <div key={index}>
+                  {editingPartIndex === index ? (
+                    <div className="bg-gray-900 border border-blue-600 rounded-2xl p-4 space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Description"
+                        value={editingPart.description}
+                        onChange={(e) => setEditingPart({ ...editingPart, description: e.target.value })}
+                        className={inputClass}
+                      />
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={editingPart.unit_price}
+                              onChange={(e) => setEditingPart({ ...editingPart, unit_price: e.target.value })}
+                              className={`${smallInputClass} w-full pl-8`}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={editingPart.quantity}
+                            onChange={(e) => setEditingPart({ ...editingPart, quantity: e.target.value })}
+                            className={`${smallInputClass} w-full`}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
+                          <div className={`${smallInputClass} w-full opacity-50`}>
+                            {formatUSD(parseFloat(editingPart.unit_price || '0') * parseFloat(editingPart.quantity || '0'))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={saveEditPart}
+                          className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg"
+                        >
+                          SAVE
+                        </button>
+                        <button
+                          onClick={cancelEditPart}
+                          className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg"
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-lg font-bold">{part.description}</p>
+                        <p className="text-gray-400">
+                          {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditPart(index)}
+                          className="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-xl font-bold text-sm"
+                        >
+                          EDIT
+                        </button>
+                        <button
+                          onClick={() => removePart(index)}
+                          className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
+                        >
+                          REMOVE
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
