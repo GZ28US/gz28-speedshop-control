@@ -194,36 +194,14 @@ export default function NewInvoicePage() {
         <div>
           <label className="block mb-3 text-lg font-bold">PARTS</label>
 
-          {/* Existing parts */}
-          {parts.length > 0 && (
-            <div className="space-y-3 mb-4">
-              {parts.map((part, index) => (
-                <div key={index} className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-lg font-bold">{part.description}</p>
-                    <p className="text-gray-400">
-                      {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removePart(index)}
-                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
-                  >
-                    REMOVE
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* New part inputs */}
+          {/* New part input box */}
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <input
               type="text"
               placeholder="Description"
               value={newPart.description}
               onChange={(e) => setNewPart({ ...newPart, description: e.target.value })}
-              className={`${inputClass}`}
+              className={inputClass}
             />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -269,6 +247,28 @@ export default function NewInvoicePage() {
               + ADD PART
             </button>
           </div>
+
+          {/* Added parts list — shown below the input box */}
+          {parts.length > 0 && (
+            <div className="space-y-3 mt-4">
+              {parts.map((part, index) => (
+                <div key={index} className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-lg font-bold">{part.description}</p>
+                    <p className="text-gray-400">
+                      {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removePart(index)}
+                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
+                  >
+                    REMOVE
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

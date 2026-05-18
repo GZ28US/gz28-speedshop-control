@@ -96,9 +96,9 @@ export default function EditInvoicePage() {
 
   function formatMileage(value: string) {
     const clean = value.replace(/[^0-9.]/g, '')
-    const parts = clean.split('.')
-    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart
+    const partsArr = clean.split('.')
+    const intPart = partsArr[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return partsArr.length > 1 ? `${intPart}.${partsArr[1]}` : intPart
   }
 
   function addPart() {
@@ -143,7 +143,6 @@ export default function EditInvoicePage() {
       return
     }
 
-    // Save new parts (ones without an id)
     const newParts = parts.filter(p => !p.id)
     if (newParts.length > 0) {
       const { error: partsError } = await supabase
@@ -232,34 +231,14 @@ export default function EditInvoicePage() {
         <div>
           <label className="block mb-3 text-lg font-bold">PARTS</label>
 
-          {parts.length > 0 && (
-            <div className="space-y-3 mb-4">
-              {parts.map((part, index) => (
-                <div key={index} className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-lg font-bold">{part.description}</p>
-                    <p className="text-gray-400">
-                      {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removePart(index)}
-                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
-                  >
-                    REMOVE
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
+          {/* New part input box */}
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <input
               type="text"
               placeholder="Description"
               value={newPart.description}
               onChange={(e) => setNewPart({ ...newPart, description: e.target.value })}
-              className={`${inputClass}`}
+              className={inputClass}
             />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -305,6 +284,28 @@ export default function EditInvoicePage() {
               + ADD PART
             </button>
           </div>
+
+          {/* Added parts list — shown below the input box */}
+          {parts.length > 0 && (
+            <div className="space-y-3 mt-4">
+              {parts.map((part, index) => (
+                <div key={index} className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-lg font-bold">{part.description}</p>
+                    <p className="text-gray-400">
+                      {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removePart(index)}
+                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
+                  >
+                    REMOVE
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
