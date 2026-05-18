@@ -1,9 +1,14 @@
 export const years = [
+  1992, 1993, 1994, 1995,
   2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017,
   2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026,
 ]
 
 export const manufacturersByYear: Record<number, string[]> = {
+  1992: ['MOPAR'],
+  1993: ['MOPAR'],
+  1994: ['MOPAR'],
+  1995: ['MOPAR'],
   2009: ['MOPAR'],
   2010: ['MOPAR'],
   2011: ['MOPAR'],
@@ -26,6 +31,7 @@ export const manufacturersByYear: Record<number, string[]> = {
 
 export const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
   MOPAR: {
+    1992: ['DODGE'], 1993: ['DODGE'], 1994: ['DODGE'], 1995: ['DODGE'],
     2009: ['RAM'], 2010: ['RAM'], 2011: ['RAM'], 2012: ['RAM'], 2013: ['RAM'],
     2014: ['RAM'], 2015: ['RAM'], 2016: ['RAM'], 2017: ['RAM'], 2018: ['DODGE', 'RAM'],
     2019: ['DODGE'], 2020: ['DODGE'], 2021: ['DODGE'], 2022: ['DODGE'], 2023: ['DODGE'],
@@ -44,6 +50,7 @@ export const brandsByManufacturerAndYear: Record<string, Record<number, string[]
 
 export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
   DODGE: {
+    1992: ['VIPER'], 1993: ['VIPER'], 1994: ['VIPER'], 1995: ['VIPER'],
     2018: ['CHALLENGER', 'CHARGER'],
     2019: ['CHALLENGER', 'CHARGER'],
     2020: ['CHALLENGER', 'CHARGER'],
@@ -71,6 +78,12 @@ export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
 }
 
 export const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
+  VIPER: {
+    1992: ['RT/10 8.0 V10'],
+    1993: ['RT/10 8.0 V10'],
+    1994: ['RT/10 8.0 V10'],
+    1995: ['RT/10 8.0 V10'],
+  },
   CHALLENGER: {
     2018: ['R/T 5.7', 'R/T ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT Demon 6.2'],
     2019: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
@@ -158,15 +171,20 @@ const durangoColors = ['Billet Silver', 'DB Black', 'Destroyer Gray', 'F8 Green'
 const durangoColors2026 = ['Destroyer Gray', 'Diamond Black', 'Octane Red', 'Vapor Gray', 'White Knuckle']
 const durangoColors2026JailBreak = ['Destroyer Gray', 'Diamond Black', 'Green Machine', 'Octane Red', 'Vapor Gray', 'White Knuckle']
 
+const viperColorsByYear: Record<number, string[]> = {
+  1992: ['Red'],
+  1993: ['Red', 'Black', 'White'],
+  1994: ['Red', 'Black', 'White', 'Emerald Green', 'Dandelion Yellow'],
+  1995: ['Red', 'Black', 'White', 'Emerald Green', 'Dandelion Yellow'],
+}
+
 const corvetteColorsByYear: Record<number, string[]> = {
-  // C7
   2014: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Cyber Gray', 'Laguna Blue', 'Lime Rock Green', 'Night Race Blue', 'Torch Red', 'Velocity Yellow'],
   2015: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Daytona Sunrise Orange', 'Laguna Blue', 'Night Race Blue', 'Shark Gray', 'Torch Red', 'Velocity Yellow'],
   2016: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Corvette Racing Yellow', 'Daytona Sunrise Orange', 'Laguna Blue', 'Long Beach Red', 'Night Race Blue', 'Shark Gray', 'Torch Red'],
   2017: ['Admiral Blue', 'Arctic White', 'Black', 'Black Rose', 'Blade Silver', 'Corvette Racing Yellow', 'Long Beach Red', 'Sterling Blue', 'Torch Red', 'Watkins Glen Gray'],
   2018: ['Admiral Blue', 'Arctic White', 'Black', 'Black Rose', 'Blade Silver', 'Ceramic Matrix Gray', 'Corvette Racing Yellow', 'Long Beach Red', 'Sebring Orange', 'Torch Red', 'Watkins Glen Gray'],
   2019: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Ceramic Gray', 'Corvette Yellow', 'Elkhart Blue', 'Long Beach Red', 'Sebring Orange', 'Shadow Gray', 'Torch Red', 'Watkins Glen Gray'],
-  // C8
   2020: ['Arctic White', 'Black', 'Accelerate Yellow', 'Blade Silver', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Long Beach Red', 'Rapid Blue', 'Sebring Orange', 'Shadow Gray', 'Torch Red', 'Zeus Bronze'],
   2021: ['Arctic White', 'Black', 'Accelerate Yellow', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Rapid Blue', 'Red Mist', 'Sebring Orange', 'Shadow Gray', 'Silver Flare', 'Torch Red', 'Zeus Bronze'],
   2022: ['Arctic White', 'Black', 'Accelerate Yellow', 'Amplify Orange', 'Caffeine', 'Ceramic Matrix Gray', 'Elkhart Lake Blue', 'Hypersonic Gray', 'Rapid Blue', 'Red Mist', 'Silver Flare', 'Torch Red'],
@@ -194,6 +212,7 @@ const colorsByConfiguration: Record<string, string[]> = {
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
   const key = `${year}-${model}-${version}-${specialEdition}`
   if (colorsByConfiguration[key]) return colorsByConfiguration[key]
+  if (model === 'VIPER' && viperColorsByYear[year]) return viperColorsByYear[year]
   if (model === 'CORVETTE' && corvetteColorsByYear[year]) return corvetteColorsByYear[year]
   if (model === 'DURANGO' && year === 2026) return durangoColors2026
   if (model === 'DURANGO') return durangoColors
