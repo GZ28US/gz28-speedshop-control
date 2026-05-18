@@ -39,7 +39,8 @@ export default function DatePicker({ label, value, onChange }: Props) {
     if (newYear && newMonth && newDay) {
       onChange(`${newYear}-${newMonth}-${newDay}`)
     } else {
-      onChange('')
+      // Store partial state as a placeholder string so selections aren't lost
+      onChange([newYear, newMonth, newDay].join('-'))
     }
   }
 
