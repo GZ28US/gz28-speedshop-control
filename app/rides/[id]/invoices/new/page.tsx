@@ -191,7 +191,7 @@ export default function NewInvoicePage() {
           <label className="block mb-3 text-lg font-bold">PARTS</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
 
-            {/* ADD form always at top */}
+            {/* ADD form at top */}
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -216,55 +216,53 @@ export default function NewInvoicePage() {
               + ADD PART
             </button>
 
-            {/* Added parts list below */}
+            {/* All added parts in one unified list */}
             {parts.length > 0 && (
-              <>
-                <div className="border-t border-gray-700 pt-3 space-y-3">
-                  {parts.map((part, index) => (
-                    <div key={index}>
-                      {editingPartIndex === index ? (
-                        <div className="border border-blue-600 rounded-2xl p-4 space-y-3">
-                          <input type="text" placeholder="Description" value={editingPart.description} onChange={(e) => setEditingPart({ ...editingPart, description: e.target.value })} className={inputClass} />
-                          <div className="flex gap-3">
-                            <div className="flex-1">
-                              <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
-                              <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                                <input type="number" min="0" step="0.01" value={editingPart.unit_price} onChange={(e) => setEditingPart({ ...editingPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
-                              </div>
-                            </div>
-                            <div className="flex-1">
-                              <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
-                              <input type="number" min="1" step="1" value={editingPart.quantity} onChange={(e) => setEditingPart({ ...editingPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
-                            </div>
-                            <div className="flex-1">
-                              <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
-                              <div className={`${smallInputClass} w-full opacity-50`}>
-                                {formatUSD((parseFloat(editingPart.unit_price || '0')) * (parseFloat(editingPart.quantity || '0')))}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-3">
-                            <button onClick={saveEditPart} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
-                            <button onClick={cancelEditPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+                {parts.map((part, index) => (
+                  <div key={index}>
+                    {editingPartIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <input type="text" placeholder="Description" value={editingPart.description} onChange={(e) => setEditingPart({ ...editingPart, description: e.target.value })} className={inputClass} />
+                        <div className="flex gap-3">
                           <div className="flex-1">
-                            <p className="text-lg font-bold">{part.description}</p>
-                            <p className="text-gray-400">{formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}</p>
+                            <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                              <input type="number" min="0" step="0.01" value={editingPart.unit_price} onChange={(e) => setEditingPart({ ...editingPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => startEditPart(index)} className="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-xl font-bold text-sm">EDIT</button>
-                            <button onClick={() => removePart(index)} className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm">REMOVE</button>
+                          <div className="flex-1">
+                            <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
+                            <input type="number" min="1" step="1" value={editingPart.quantity} onChange={(e) => setEditingPart({ ...editingPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
+                            <div className={`${smallInputClass} w-full opacity-50`}>
+                              {formatUSD((parseFloat(editingPart.unit_price || '0')) * (parseFloat(editingPart.quantity || '0')))}
+                            </div>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
+                        <div className="flex gap-3">
+                          <button onClick={saveEditPart} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < parts.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold truncate">{part.description}</p>
+                          <p className="text-sm text-gray-400">{formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditPart(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removePart(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

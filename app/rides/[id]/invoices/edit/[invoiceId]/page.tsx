@@ -248,7 +248,7 @@ export default function EditInvoicePage() {
           <label className="block mb-3 text-lg font-bold">PARTS</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
 
-            {/* ADD form always at top */}
+            {/* ADD form at top */}
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -273,13 +273,13 @@ export default function EditInvoicePage() {
               + ADD PART
             </button>
 
-            {/* Added parts list below */}
+            {/* All added parts in one unified list */}
             {parts.length > 0 && (
-              <div className="border-t border-gray-700 pt-3 space-y-3">
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {parts.map((part, index) => (
                   <div key={index}>
                     {editingPartIndex === index ? (
-                      <div className="border border-blue-600 rounded-2xl p-4 space-y-3">
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
                         <input type="text" placeholder="Description" value={editingPart.description} onChange={(e) => setEditingPart({ ...editingPart, description: e.target.value })} className={inputClass} />
                         <div className="flex gap-3">
                           <div className="flex-1">
@@ -306,14 +306,14 @@ export default function EditInvoicePage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <p className="text-lg font-bold">{part.description}</p>
-                          <p className="text-gray-400">{formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}</p>
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < parts.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold truncate">{part.description}</p>
+                          <p className="text-sm text-gray-400">{formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}</p>
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => startEditPart(index)} className="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-xl font-bold text-sm">EDIT</button>
-                          <button onClick={() => removePart(index)} className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm">REMOVE</button>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditPart(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removePart(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
                         </div>
                       </div>
                     )}
