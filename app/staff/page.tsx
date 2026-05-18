@@ -9,6 +9,8 @@ type StaffMember = {
   id: string
   name: string
   position: string
+  latestConclusion: string | null
+  hasActiveseason: boolean
 }
 
 export default function StaffPage() {
@@ -21,12 +23,49 @@ export default function StaffPage() {
   }, [])
 
   async function loadStaff() {
-    const { data } = await supabase
+    const { data: staffData } = await supabase
       .from('staff')
       .select('*')
       .order('name', { ascending: true })
 
-    setStaff(data || [])
+    if (!staffData) {
+      setLoading(false)
+      return
+    }
+
+    const { data: seasonsData } = await supabase
+      .from('seasons')
+      .select('staff_id, date_conclusion')
+
+    const staffWithSeasons: StaffMember[] = staffData.map((member) => {
+      const memberSeasons = seasonsData?.filter(s => s.staff_id === member.id) || []
+      const hasActiveSeason = memberSeasons.some(s => !s.date_conclusion)
+      const concluded = memberSeasons
+        .filter(s => s.date_conclusion)
+        .map(s => s.date_conclusion)
+        .sort((a, b) => b.localeCompare(a))
+      const latestConclusion = concluded[0] || null
+
+      return {
+        ...member,
+        latestConclusion,
+        hasActiveseason: hasActiveSeason,
+      }
+    })
+
+    // Sort: active (no conclusion) first, then by latest conclusion descending
+    staffWithSeasons.sort((a, b) => {
+      if (a.hasActiveseason && !b.hasActiveseason) return -1
+      if (!a.hasActiveseason && b.hasActiveseason) return 1
+      if (a.latestConclusion && b.latestConclusion) {
+        return b.latestConclusion.localeCompare(a.latestConclusion)
+      }
+      if (a.latestConclusion && !b.latestConclusion) return 1
+      if (!a.latestConclusion && b.latestConclusion) return -1
+      return a.name.localeCompare(b.name)
+    })
+
+    setStaff(staffWithSeasons)
     setLoading(false)
   }
 
