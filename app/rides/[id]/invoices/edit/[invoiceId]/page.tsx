@@ -135,11 +135,18 @@ export default function EditInvoicePage() {
 
   function getPartTotal(part: Part) { return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0) }
 
-  // UPDATE INTUITIVE EXPENSES — rebuilds Florida Taxes + all parts as expense rows, preserves user-added ones
   function updateIntuitiveExpenses() {
     const floridaTaxesPct = parseFloat(floridaTaxes) || 0
     const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
     const floridaTaxesAmount = partsSubTotal * (floridaTaxesPct / 100)
+
+    const existingFlorida = expenses.find(e => e.supplier === 'Florida State' && e.item === 'Taxes')
+    const existingPartExpenses: Record<string, Expense> = {}
+    expenses.forEach(e => {
+      if (!(e.supplier === 'Florida State' && e.item === 'Taxes')) {
+        existingPartExpenses[e.item] = e
+      }
+    })
 
     const intuitiveExpenses: Expense[] = [
       {
@@ -147,18 +154,20 @@ export default function EditInvoicePage() {
         supplier: 'Florida State',
         item: 'Taxes',
         amount: floridaTaxesAmount.toFixed(2),
-        payment_date: '',
+        payment_date: existingFlorida?.payment_date || '',
       },
-      ...parts.map(p => ({
-        expense_date: isValidDate(entryDate) ? entryDate : '',
-        supplier: '',
-        item: p.description,
-        amount: getPartTotal(p).toFixed(2),
-        payment_date: '',
-      })),
+      ...parts.map(p => {
+        const existing = existingPartExpenses[p.description]
+        return {
+          expense_date: isValidDate(entryDate) ? entryDate : existing?.expense_date || '',
+          supplier: existing?.supplier || '',
+          item: p.description,
+          amount: getPartTotal(p).toFixed(2),
+          payment_date: existing?.payment_date || '',
+        }
+      }),
     ]
 
-    // Preserve user-added expenses: anything that isn't Florida State taxes and doesn't match a part description
     const partDescriptions = parts.map(p => p.description)
     const userExpenses = expenses.filter(e =>
       !(e.supplier === 'Florida State' && e.item === 'Taxes') &&
@@ -660,13 +669,7 @@ export default function EditInvoicePage() {
             </div>
             <DatePicker label="PAYMENT DATE" value={newExpense.payment_date} onChange={(v) => setNewExpense({ ...newExpense, payment_date: v })} />
 
-            <button
-              onClick={updateIntuitiveExpenses}
-              className="w-full bg-yellow-700 hover:bg-yellow-600 px-5 py-3 rounded-2xl font-bold text-lg"
-            >
-              ↻ UPDATE INTUITIVE EXPENSES
-            </button>
-
+            <button onClick={updateIntuitiveExpenses} className="w-full bg-yellow-700 hover:bg-yellow-600 px-5 py-3 rounded-2xl font-bold text-lg">↻ UPDATE INTUITIVE EXPENSES</button>
             <button onClick={addExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD EXPENSE</button>
 
             {expenses.length > 0 && (
