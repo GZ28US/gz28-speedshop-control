@@ -30,7 +30,9 @@ const days = Array.from({ length: 31 }, (_, i) => {
 })
 
 export default function DatePicker({ label, value, onChange }: Props) {
-  const parts = value ? value.split('-') : ['', '', '']
+  // Parse only if it looks like a full or partial date
+  const isValidDate = value && value.length >= 8 && value.includes('-')
+  const parts = isValidDate ? value.split('-') : ['', '', '']
   const year = parts[0] || ''
   const month = parts[1] || ''
   const day = parts[2] || ''
@@ -39,9 +41,21 @@ export default function DatePicker({ label, value, onChange }: Props) {
     if (newYear && newMonth && newDay) {
       onChange(`${newYear}-${newMonth}-${newDay}`)
     } else {
-      // Store partial state as a placeholder string so selections aren't lost
-      onChange([newYear, newMonth, newDay].join('-'))
+      // Keep partial state so selections aren't lost
+      onChange(`${newYear}-${newMonth}-${newDay}`)
     }
+  }
+
+  function handleMonthChange(newMonth: string) {
+    update(year, newMonth, day)
+  }
+
+  function handleDayChange(newDay: string) {
+    update(year, month, newDay)
+  }
+
+  function handleYearChange(newYear: string) {
+    update(newYear, month, day)
   }
 
   const selectClass = 'bg-gray-900 border border-gray-700 rounded-2xl px-4 py-4 text-xl flex-1'
@@ -52,7 +66,7 @@ export default function DatePicker({ label, value, onChange }: Props) {
       <div className="flex gap-3">
         <select
           value={month}
-          onChange={(e) => update(year, e.target.value, day)}
+          onChange={(e) => handleMonthChange(e.target.value)}
           className={selectClass}
         >
           <option value="">Month</option>
@@ -63,7 +77,7 @@ export default function DatePicker({ label, value, onChange }: Props) {
 
         <select
           value={day}
-          onChange={(e) => update(year, month, e.target.value)}
+          onChange={(e) => handleDayChange(e.target.value)}
           className={selectClass}
         >
           <option value="">Day</option>
@@ -74,7 +88,7 @@ export default function DatePicker({ label, value, onChange }: Props) {
 
         <select
           value={year}
-          onChange={(e) => update(e.target.value, month, day)}
+          onChange={(e) => handleYearChange(e.target.value)}
           className={selectClass}
         >
           <option value="">Year</option>
@@ -83,6 +97,15 @@ export default function DatePicker({ label, value, onChange }: Props) {
           ))}
         </select>
       </div>
+
+      {(month || day || year) && (
+        <button
+          onClick={() => onChange('')}
+          className="mt-2 text-gray-500 hover:text-gray-300 text-sm"
+        >
+          Clear date
+        </button>
+      )}
     </div>
   )
 }
