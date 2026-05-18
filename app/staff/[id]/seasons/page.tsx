@@ -178,7 +178,7 @@ export default function SeasonsPage() {
             BACK
           </Link>
           <Link
-            href={`/staff/${staffId}/seasons/new`}
+            href={`/staff/${staffId}/seasons/create`}
             className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold"
           >
             ADD NEW SEASON
@@ -223,4 +223,23 @@ export default function SeasonsPage() {
 
                   <Link
                     href={`/staff/${staffId}/seasons/edit/${season.id}`}
-                    className="bg-blue-700 hover:bg-blue-600 px-5 py-3 r
+                    className="bg-blue-700 hover:bg-blue-600 px-5 py-3 rounded-2xl font-bold"
+                  >
+                    EDIT
+                  </Link>
+
+                  <button
+                    onClick={() => setConfirmId(season.id)}
+                    className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
+                  >
+                    REMOVE
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </main>
+  )
+}

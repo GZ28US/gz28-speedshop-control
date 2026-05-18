@@ -65,7 +65,7 @@ function formatRunningLabel(expense: Expense, season: Season): string {
 export default function ExpensesPage() {
   const params = useParams()
   const staffId = String(params.id)
-  const seasonID = String(params.seasonID)
+  const seasonID = String(params.seasonID ?? params.seasonId ?? '')
 
   const [season, setSeason] = useState<Season | null>(null)
   const [staffName, setStaffName] = useState('')
@@ -153,6 +153,9 @@ export default function ExpensesPage() {
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
+
+      {/* DEBUG - remove after checking */}
+      <p className="text-yellow-400 text-sm mb-4">{JSON.stringify(params)}</p>
 
       {confirmId && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
