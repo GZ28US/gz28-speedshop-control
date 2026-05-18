@@ -21,6 +21,11 @@ type Client = {
 
 const allManufacturers = ['MOPAR', 'GM', 'FORD', 'PROTOTYPE']
 
+function getYearsForManufacturer(manufacturer: string): number[] {
+  if (manufacturer === 'PROTOTYPE') return []
+  return years.filter((y) => manufacturersByYear[y]?.includes(manufacturer))
+}
+
 export default function EditRidePage() {
   const params = useParams()
   const router = useRouter()
@@ -33,8 +38,8 @@ export default function EditRidePage() {
   const [projectName, setProjectName] = useState('')
   const [vin, setVin] = useState('')
   const [plate, setPlate] = useState('')
-  const [year, setYear] = useState(2023)
   const [manufacturer, setManufacturer] = useState('MOPAR')
+  const [year, setYear] = useState(2023)
   const [brand, setBrand] = useState('DODGE')
   const [model, setModel] = useState('CHALLENGER')
   const [version, setVersion] = useState('')
@@ -42,6 +47,7 @@ export default function EditRidePage() {
   const [color, setColor] = useState('')
 
   const isPrototype = manufacturer === 'PROTOTYPE'
+  const availableYears = getYearsForManufacturer(manufacturer)
 
   useEffect(() => {
     loadClients()
@@ -71,8 +77,8 @@ export default function EditRidePage() {
     setProjectName(data.project_name || '')
     setVin(data.vin || '')
     setPlate(data.plate || '')
-    setYear(Number(data.year) || 2023)
     setManufacturer(data.manufacturer || 'MOPAR')
+    setYear(Number(data.year) || 2023)
     setBrand(data.brand || 'DODGE')
     setModel(data.model || 'CHALLENGER')
     setVersion(data.version || '')
@@ -81,12 +87,16 @@ export default function EditRidePage() {
     setLoading(false)
   }
 
+  // When manufacturer changes, reset year to last available for that manufacturer
   useEffect(() => {
     if (loading || isPrototype) return
-    const available = manufacturersByYear[year] || []
-    if (!available.includes(manufacturer)) setManufacturer(available[0] || '')
-  }, [year])
+    const available = getYearsForManufacturer(manufacturer)
+    if (!available.includes(year)) {
+      setYear(available[available.length - 1] || 2023)
+    }
+  }, [manufacturer])
 
+  // When year changes, cascade down
   useEffect(() => {
     if (loading || isPrototype) return
     const available = brandsByManufacturerAndYear[manufacturer]?.[year] || []
@@ -187,19 +197,9 @@ export default function EditRidePage() {
         {!isPrototype && (
           <>
             <div>
-              <label className="block mb-2 text-lg font-bold">VIN</label>
-              <input value={vin} onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
-            </div>
-
-            <div>
-              <label className="block mb-2 text-lg font-bold">PLATE</label>
-              <input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
-            </div>
-
-            <div>
               <label className="block mb-2 text-lg font-bold">YEAR</label>
               <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={selectClass}>
-                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                {availableYears.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
 
@@ -238,6 +238,16 @@ export default function EditRidePage() {
               <select value={color} onChange={(e) => setColor(e.target.value)} className={selectClass}>
                 {availableColors.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
+            </div>
+
+            <div>
+              <label className="block mb-2 text-lg font-bold">VIN</label>
+              <input value={vin} onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
+            </div>
+
+            <div>
+              <label className="block mb-2 text-lg font-bold">PLATE</label>
+              <input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} className={inputClass} />
             </div>
           </>
         )}
