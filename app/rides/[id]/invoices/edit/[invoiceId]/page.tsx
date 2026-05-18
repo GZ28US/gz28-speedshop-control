@@ -32,6 +32,15 @@ type Note = {
   note: string
 }
 
+type Expense = {
+  id?: string
+  expense_date: string
+  supplier: string
+  item: string
+  price: string
+  payment_date: string
+}
+
 const paymentSources = ['CASH', 'ACH', 'ZELLE', 'CHECK']
 
 export default function EditInvoicePage() {
@@ -66,6 +75,10 @@ export default function EditInvoicePage() {
   const [newNote, setNewNote] = useState('')
   const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
   const [editingNote, setEditingNote] = useState('')
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [newExpense, setNewExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+  const [editingExpenseIndex, setEditingExpenseIndex] = useState<number | null>(null)
+  const [editingExpense, setEditingExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
 
   useEffect(() => { loadRide(); loadInvoice() }, [])
 
@@ -98,6 +111,9 @@ export default function EditInvoicePage() {
     const { data: notesData } = await supabase.from('invoice_notes').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: true })
     if (notesData) setNotes(notesData.map(n => ({ id: n.id, note: n.note })))
 
+    const { data: expensesData } = await supabase.from('invoice_expenses').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: true })
+    if (expensesData) setExpenses(expensesData.map(e => ({ id: e.id, expense_date: e.expense_date || '', supplier: e.supplier || '', item: e.item, price: String(e.price), payment_date: e.payment_date || '' })))
+
     setLoading(false)
   }
 
@@ -108,6 +124,11 @@ export default function EditInvoicePage() {
     const partsArr = clean.split('.')
     const intPart = partsArr[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     return partsArr.length > 1 ? `${intPart}.${partsArr[1]}` : intPart
+  }
+
+  function formatDate(d: string) {
+    if (!isValidDate(d)) return '-'
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
   // Parts
@@ -203,6 +224,35 @@ export default function EditInvoicePage() {
   }
   function cancelEditNote() { setEditingNoteIndex(null); setEditingNote('') }
 
+  // Expenses
+  function addExpense() {
+    if (!newExpense.item || !newExpense.price) { alert('Please enter at least item and price'); return }
+    setExpenses([...expenses, newExpense]); setNewExpense({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+  }
+  async function removeExpense(index: number) {
+    const exp = expenses[index]
+    if (exp.id) await supabase.from('invoice_expenses').delete().eq('id', exp.id)
+    setExpenses(expenses.filter((_, i) => i !== index))
+  }
+  function startEditExpense(index: number) { setEditingExpenseIndex(index); setEditingExpense({ ...expenses[index] }) }
+  async function saveEditExpense() {
+    if (!editingExpense.item || !editingExpense.price) { alert('Please enter at least item and price'); return }
+    const exp = expenses[editingExpenseIndex!]
+    if (exp.id) {
+      const { error } = await supabase.from('invoice_expenses').update({
+        expense_date: isValidDate(editingExpense.expense_date) ? editingExpense.expense_date : null,
+        supplier: editingExpense.supplier || null,
+        item: editingExpense.item,
+        price: parseFloat(editingExpense.price),
+        payment_date: isValidDate(editingExpense.payment_date) ? editingExpense.payment_date : null,
+      }).eq('id', exp.id)
+      if (error) { alert(error.message); return }
+    }
+    const updated = [...expenses]; updated[editingExpenseIndex!] = { ...editingExpense, id: exp.id }; setExpenses(updated)
+    setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' })
+  }
+  function cancelEditExpense() { setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', price: '', payment_date: '' }) }
+
   // Calculations
   const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
   const floridaTaxesPct = parseFloat(floridaTaxes) || 0
@@ -215,6 +265,15 @@ export default function EditInvoicePage() {
   const grandTotal = partsAndServicesTotal - globalDiscountAmount
   const totalPaid = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
   const balance = totalPaid - grandTotal
+  const expensesTotalGlobal = expenses.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0)
+  const expensesTotalPaid = expenses.filter(e => isValidDate(e.payment_date)).reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0)
+  const expensesBalance = expensesTotalPaid - expensesTotalGlobal
+  const currentProfit = totalPaid - expensesTotalPaid
+  const currentProfitPct = totalPaid > 0 ? (currentProfit / totalPaid) * 100 : 0
+  const finalProfit = grandTotal - expensesTotalGlobal
+  const finalProfitPct = grandTotal > 0 ? (finalProfit / grandTotal) * 100 : 0
+
+  const profitColor = (val: number) => val < 0 ? 'text-red-500' : 'text-blue-400'
 
   async function saveInvoice() {
     const { error } = await supabase.from('invoices').update({
@@ -246,6 +305,11 @@ export default function EditInvoicePage() {
     const newNotes = notes.filter(n => !n.id)
     if (newNotes.length > 0) {
       const { error: e } = await supabase.from('invoice_notes').insert(newNotes.map(n => ({ invoice_id: invoiceId, note: n.note })))
+      if (e) { alert(e.message); return }
+    }
+    const newExpenses = expenses.filter(e => !e.id)
+    if (newExpenses.length > 0) {
+      const { error: e } = await supabase.from('invoice_expenses').insert(newExpenses.map(ex => ({ invoice_id: invoiceId, expense_date: isValidDate(ex.expense_date) ? ex.expense_date : null, supplier: ex.supplier || null, item: ex.item, price: parseFloat(ex.price), payment_date: isValidDate(ex.payment_date) ? ex.payment_date : null })))
       if (e) { alert(e.message); return }
     }
 
@@ -292,22 +356,16 @@ export default function EditInvoicePage() {
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
+                <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                   <input type="number" min="0" step="0.01" placeholder="0.00" value={newPart.unit_price} onChange={(e) => setNewPart({ ...newPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
                 <input type="number" min="1" step="1" placeholder="1" value={newPart.quantity} onChange={(e) => setNewPart({ ...newPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
               </div>
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
-                <div className={`${smallInputClass} w-full opacity-50`}>
-                  {newPart.unit_price && newPart.quantity ? formatUSD(parseFloat(newPart.unit_price || '0') * parseFloat(newPart.quantity || '0')) : '$0.00'}
-                </div>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">TOTAL</label>
+                <div className={`${smallInputClass} w-full opacity-50`}>{newPart.unit_price && newPart.quantity ? formatUSD(parseFloat(newPart.unit_price || '0') * parseFloat(newPart.quantity || '0')) : '$0.00'}</div>
               </div>
             </div>
             <button onClick={addPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PART</button>
@@ -319,19 +377,15 @@ export default function EditInvoicePage() {
                       <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
                         <input type="text" placeholder="Description" value={editingPart.description} onChange={(e) => setEditingPart({ ...editingPart, description: e.target.value })} className={inputClass} />
                         <div className="flex gap-3">
-                          <div className="flex-1">
-                            <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
-                            <div className="relative">
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
+                            <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                               <input type="number" min="0" step="0.01" value={editingPart.unit_price} onChange={(e) => setEditingPart({ ...editingPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                             </div>
                           </div>
-                          <div className="flex-1">
-                            <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
                             <input type="number" min="1" step="1" value={editingPart.quantity} onChange={(e) => setEditingPart({ ...editingPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
                           </div>
-                          <div className="flex-1">
-                            <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">TOTAL</label>
                             <div className={`${smallInputClass} w-full opacity-50`}>{formatUSD((parseFloat(editingPart.unit_price || '0')) * (parseFloat(editingPart.quantity || '0')))}</div>
                           </div>
                         </div>
@@ -381,10 +435,8 @@ export default function EditInvoicePage() {
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <input type="text" placeholder="Description" value={newService.description} onChange={(e) => setNewService({ ...newService, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">PRICE</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">PRICE</label>
+                <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                   <input type="number" min="0" step="0.01" placeholder="0.00" value={newService.price} onChange={(e) => setNewService({ ...newService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
@@ -398,10 +450,8 @@ export default function EditInvoicePage() {
                       <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
                         <input type="text" placeholder="Description" value={editingService.description} onChange={(e) => setEditingService({ ...editingService, description: e.target.value })} className={inputClass} />
                         <div className="flex gap-3">
-                          <div className="flex-1">
-                            <label className="block mb-1 text-sm text-gray-400">PRICE</label>
-                            <div className="relative">
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">PRICE</label>
+                            <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                               <input type="number" min="0" step="0.01" value={editingService.price} onChange={(e) => setEditingService({ ...editingService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                             </div>
                           </div>
@@ -459,15 +509,12 @@ export default function EditInvoicePage() {
           <label className="block mb-3 text-lg font-bold">PAYMENTS</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
             <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+                <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                   <input type="number" min="0" step="0.01" placeholder="0.00" value={newPayment.amount} onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
-              <div className="flex-1">
-                <label className="block mb-1 text-sm text-gray-400">SOURCE</label>
+              <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">SOURCE</label>
                 <select value={newPayment.source} onChange={(e) => setNewPayment({ ...newPayment, source: e.target.value })} className={`${selectClass} w-full`}>
                   {paymentSources.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -482,15 +529,12 @@ export default function EditInvoicePage() {
                     {editingPaymentIndex === index ? (
                       <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
                         <div className="flex gap-3">
-                          <div className="flex-1">
-                            <label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
-                            <div className="relative">
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
+                            <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                               <input type="number" min="0" step="0.01" value={editingPayment.amount} onChange={(e) => setEditingPayment({ ...editingPayment, amount: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
                             </div>
                           </div>
-                          <div className="flex-1">
-                            <label className="block mb-1 text-sm text-gray-400">SOURCE</label>
+                          <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">SOURCE</label>
                             <select value={editingPayment.source} onChange={(e) => setEditingPayment({ ...editingPayment, source: e.target.value })} className={`${selectClass} w-full`}>
                               {paymentSources.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -506,7 +550,7 @@ export default function EditInvoicePage() {
                       <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < payments.length - 1 ? 'border-b border-gray-700' : ''}`}>
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-bold">{formatUSD(parseFloat(payment.amount))}</p>
-                          <p className="text-sm text-gray-400">{payment.source}{payment.payment_date ? ` — ${new Date(payment.payment_date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}</p>
+                          <p className="text-sm text-gray-400">{payment.source}{payment.payment_date ? ` — ${formatDate(payment.payment_date)}` : ''}</p>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button onClick={() => startEditPayment(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
@@ -529,17 +573,101 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
+        {/* EXPENSES SECTION */}
+        <div>
+          <label className="block mb-3 text-lg font-bold">EXPENSES</label>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+            <DatePicker label="DATE" value={newExpense.expense_date} onChange={(v) => setNewExpense({ ...newExpense, expense_date: v })} />
+            <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
+              <input type="text" placeholder="Supplier (optional)" value={newExpense.supplier} onChange={(e) => setNewExpense({ ...newExpense, supplier: e.target.value })} className={inputClass} />
+            </div>
+            <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
+              <input type="text" placeholder="Item description" value={newExpense.item} onChange={(e) => setNewExpense({ ...newExpense, item: e.target.value })} className={inputClass} />
+            </div>
+            <div><label className="block mb-1 text-sm text-gray-400">PRICE</label>
+              <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                <input type="number" min="0" step="0.01" placeholder="0.00" value={newExpense.price} onChange={(e) => setNewExpense({ ...newExpense, price: e.target.value })} className={`${inputClass} pl-10`} />
+              </div>
+            </div>
+            <DatePicker label="PAYMENT DATE" value={newExpense.payment_date} onChange={(v) => setNewExpense({ ...newExpense, payment_date: v })} />
+            <button onClick={addExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD EXPENSE</button>
+
+            {expenses.length > 0 && (
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+                {expenses.map((exp, index) => (
+                  <div key={index}>
+                    {editingExpenseIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <DatePicker label="DATE" value={editingExpense.expense_date} onChange={(v) => setEditingExpense({ ...editingExpense, expense_date: v })} />
+                        <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
+                          <input type="text" value={editingExpense.supplier} onChange={(e) => setEditingExpense({ ...editingExpense, supplier: e.target.value })} className={inputClass} />
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
+                          <input type="text" value={editingExpense.item} onChange={(e) => setEditingExpense({ ...editingExpense, item: e.target.value })} className={inputClass} />
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-400">PRICE</label>
+                          <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                            <input type="number" min="0" step="0.01" value={editingExpense.price} onChange={(e) => setEditingExpense({ ...editingExpense, price: e.target.value })} className={`${inputClass} pl-10`} />
+                          </div>
+                        </div>
+                        <DatePicker label="PAYMENT DATE" value={editingExpense.payment_date} onChange={(v) => setEditingExpense({ ...editingExpense, payment_date: v })} />
+                        <div className="flex gap-3">
+                          <button onClick={saveEditExpense} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < expenses.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold truncate">{exp.item}</p>
+                          <p className="text-sm text-gray-400">
+                            {formatUSD(parseFloat(exp.price))}
+                            {exp.supplier ? ` — ${exp.supplier}` : ''}
+                            {isValidDate(exp.expense_date) ? ` — ${formatDate(exp.expense_date)}` : ''}
+                          </p>
+                          <p className="text-sm text-gray-500">{isValidDate(exp.payment_date) ? `Paid: ${formatDate(exp.payment_date)}` : 'Not paid yet'}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditExpense(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removeExpense(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="text-gray-400 font-bold">TOTAL GLOBAL</span>
+              <span className="text-xl font-bold">{formatUSD(expensesTotalGlobal)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 font-bold">TOTAL PAID</span>
+              <span className="text-xl font-bold">{formatUSD(expensesTotalPaid)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-lg">BALANCE</span>
+              <span className={`text-2xl font-bold ${expensesBalance < 0 ? 'text-red-500' : 'text-blue-400'}`}>{formatUSD(expensesBalance)}</span>
+            </div>
+            <div className="border-t border-gray-700 pt-3 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400 font-bold">CURRENT PROFIT</span>
+                <span className={`text-xl font-bold ${profitColor(currentProfit)}`}>{formatUSD(currentProfit)} / {currentProfitPct.toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-lg">FINAL PROFIT</span>
+                <span className={`text-2xl font-bold ${profitColor(finalProfit)}`}>{formatUSD(finalProfit)} / {finalProfitPct.toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* NOTES SECTION */}
         <div>
           <label className="block mb-3 text-lg font-bold">NOTES</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
-            <textarea
-              placeholder="Enter a note..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              rows={3}
-              className="w-full bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none"
-            />
+            <textarea placeholder="Enter a note..." value={newNote} onChange={(e) => setNewNote(e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none" />
             <button onClick={addNote} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD NOTE</button>
             {notes.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
@@ -547,12 +675,7 @@ export default function EditInvoicePage() {
                   <div key={index}>
                     {editingNoteIndex === index ? (
                       <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
-                        <textarea
-                          value={editingNote}
-                          onChange={(e) => setEditingNote(e.target.value)}
-                          rows={3}
-                          className="w-full bg-gray-900 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none"
-                        />
+                        <textarea value={editingNote} onChange={(e) => setEditingNote(e.target.value)} rows={3} className="w-full bg-gray-900 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none" />
                         <div className="flex gap-3">
                           <button onClick={saveEditNote} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
                           <button onClick={cancelEditNote} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
@@ -574,10 +697,7 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
-        <button onClick={saveInvoice} className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">
-          SAVE CHANGES
-        </button>
-
+        <button onClick={saveInvoice} className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">SAVE CHANGES</button>
         <a href={`/rides/${rideId}/invoices`} className="text-gray-400 text-xl">Cancel</a>
       </div>
     </main>
