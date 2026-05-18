@@ -45,36 +45,16 @@ export default function EditInvoicePage() {
   const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null)
   const [editingService, setEditingService] = useState<Service>({ description: '', price: '' })
 
-  useEffect(() => {
-    loadRide()
-    loadInvoice()
-  }, [])
+  useEffect(() => { loadRide(); loadInvoice() }, [])
 
   async function loadRide() {
-    const { data } = await supabase
-      .from('rides')
-      .select('project_code, project_name')
-      .eq('id', rideId)
-      .single()
-
-    if (data) {
-      setProjectCode(data.project_code || '')
-      setProjectName(data.project_name || '')
-    }
+    const { data } = await supabase.from('rides').select('project_code, project_name').eq('id', rideId).single()
+    if (data) { setProjectCode(data.project_code || ''); setProjectName(data.project_name || '') }
   }
 
   async function loadInvoice() {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select('*')
-      .eq('id', invoiceId)
-      .single()
-
-    if (error || !data) {
-      alert('Invoice not found')
-      router.push(`/rides/${rideId}/invoices`)
-      return
-    }
+    const { data, error } = await supabase.from('invoices').select('*').eq('id', invoiceId).single()
+    if (error || !data) { alert('Invoice not found'); router.push(`/rides/${rideId}/invoices`); return }
 
     setInvoiceCode(data.invoice_code || '')
     setEntryDate(data.entry_date || '')
@@ -84,41 +64,16 @@ export default function EditInvoicePage() {
     setFloridaTaxes(data.florida_taxes ? String(data.florida_taxes) : '')
     setGlobalDiscount(data.global_discount ? String(data.global_discount) : '')
 
-    const { data: partsData } = await supabase
-      .from('invoice_parts')
-      .select('*')
-      .eq('invoice_id', invoiceId)
-      .order('created_at', { ascending: true })
+    const { data: partsData } = await supabase.from('invoice_parts').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: true })
+    if (partsData) setParts(partsData.map(p => ({ id: p.id, description: p.description, unit_price: String(p.unit_price), quantity: String(p.quantity) })))
 
-    if (partsData) {
-      setParts(partsData.map(p => ({
-        id: p.id,
-        description: p.description,
-        unit_price: String(p.unit_price),
-        quantity: String(p.quantity),
-      })))
-    }
-
-    const { data: servicesData } = await supabase
-      .from('invoice_services')
-      .select('*')
-      .eq('invoice_id', invoiceId)
-      .order('created_at', { ascending: true })
-
-    if (servicesData) {
-      setServices(servicesData.map(s => ({
-        id: s.id,
-        description: s.description,
-        price: String(s.price),
-      })))
-    }
+    const { data: servicesData } = await supabase.from('invoice_services').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: true })
+    if (servicesData) setServices(servicesData.map(s => ({ id: s.id, description: s.description, price: String(s.price) })))
 
     setLoading(false)
   }
 
-  function isValidDate(d: string) {
-    return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null
-  }
+  function isValidDate(d: string) { return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null }
 
   function formatMileage(value: string) {
     const clean = value.replace(/[^0-9.]/g, '')
@@ -129,136 +84,84 @@ export default function EditInvoicePage() {
 
   // Parts
   function addPart() {
-    if (!newPart.description || !newPart.unit_price || !newPart.quantity) {
-      alert('Please fill in all part fields')
-      return
-    }
-    setParts([...parts, newPart])
-    setNewPart({ description: '', unit_price: '', quantity: '1' })
+    if (!newPart.description || !newPart.unit_price || !newPart.quantity) { alert('Please fill in all part fields'); return }
+    setParts([...parts, newPart]); setNewPart({ description: '', unit_price: '', quantity: '1' })
   }
-
   async function removePart(index: number) {
     const part = parts[index]
     if (part.id) await supabase.from('invoice_parts').delete().eq('id', part.id)
     setParts(parts.filter((_, i) => i !== index))
   }
-
-  function startEditPart(index: number) {
-    setEditingPartIndex(index)
-    setEditingPart({ ...parts[index] })
-  }
-
+  function startEditPart(index: number) { setEditingPartIndex(index); setEditingPart({ ...parts[index] }) }
   async function saveEditPart() {
-    if (!editingPart.description || !editingPart.unit_price || !editingPart.quantity) {
-      alert('Please fill in all part fields')
-      return
-    }
+    if (!editingPart.description || !editingPart.unit_price || !editingPart.quantity) { alert('Please fill in all part fields'); return }
     const part = parts[editingPartIndex!]
     if (part.id) {
-      const { error } = await supabase.from('invoice_parts').update({
-        description: editingPart.description,
-        unit_price: parseFloat(editingPart.unit_price),
-        quantity: parseFloat(editingPart.quantity),
-      }).eq('id', part.id)
+      const { error } = await supabase.from('invoice_parts').update({ description: editingPart.description, unit_price: parseFloat(editingPart.unit_price), quantity: parseFloat(editingPart.quantity) }).eq('id', part.id)
       if (error) { alert(error.message); return }
     }
-    const updated = [...parts]
-    updated[editingPartIndex!] = { ...editingPart, id: part.id }
-    setParts(updated)
-    setEditingPartIndex(null)
-    setEditingPart({ description: '', unit_price: '', quantity: '1' })
+    const updated = [...parts]; updated[editingPartIndex!] = { ...editingPart, id: part.id }; setParts(updated)
+    setEditingPartIndex(null); setEditingPart({ description: '', unit_price: '', quantity: '1' })
   }
-
-  function cancelEditPart() {
-    setEditingPartIndex(null)
-    setEditingPart({ description: '', unit_price: '', quantity: '1' })
-  }
-
-  function getPartTotal(part: Part) {
-    return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0)
-  }
+  function cancelEditPart() { setEditingPartIndex(null); setEditingPart({ description: '', unit_price: '', quantity: '1' }) }
+  function getPartTotal(part: Part) { return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0) }
 
   // Services
   function addService() {
-    if (!newService.description || !newService.price) {
-      alert('Please fill in all service fields')
-      return
-    }
-    setServices([...services, newService])
-    setNewService({ description: '', price: '' })
+    if (!newService.description) { alert('Please enter a description'); return }
+    setServices([...services, newService]); setNewService({ description: '', price: '' })
   }
-
   async function removeService(index: number) {
     const svc = services[index]
     if (svc.id) await supabase.from('invoice_services').delete().eq('id', svc.id)
     setServices(services.filter((_, i) => i !== index))
   }
-
-  function startEditService(index: number) {
-    setEditingServiceIndex(index)
-    setEditingService({ ...services[index] })
-  }
-
+  function startEditService(index: number) { setEditingServiceIndex(index); setEditingService({ ...services[index] }) }
   async function saveEditService() {
-    if (!editingService.description || !editingService.price) {
-      alert('Please fill in all service fields')
-      return
-    }
+    if (!editingService.description) { alert('Please enter a description'); return }
     const svc = services[editingServiceIndex!]
     if (svc.id) {
-      const { error } = await supabase.from('invoice_services').update({
-        description: editingService.description,
-        price: parseFloat(editingService.price),
-      }).eq('id', svc.id)
+      const { error } = await supabase.from('invoice_services').update({ description: editingService.description, price: parseFloat(editingService.price) || 0 }).eq('id', svc.id)
       if (error) { alert(error.message); return }
     }
-    const updated = [...services]
-    updated[editingServiceIndex!] = { ...editingService, id: svc.id }
-    setServices(updated)
-    setEditingServiceIndex(null)
-    setEditingService({ description: '', price: '' })
+    const updated = [...services]; updated[editingServiceIndex!] = { ...editingService, id: svc.id }; setServices(updated)
+    setEditingServiceIndex(null); setEditingService({ description: '', price: '' })
   }
+  function cancelEditService() { setEditingServiceIndex(null); setEditingService({ description: '', price: '' }) }
 
-  function cancelEditService() {
-    setEditingServiceIndex(null)
-    setEditingService({ description: '', price: '' })
-  }
+  // Calculations
+  const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
+  const floridaTaxesPct = parseFloat(floridaTaxes) || 0
+  const floridaTaxesAmount = partsSubTotal * (floridaTaxesPct / 100)
+  const partsTotal = partsSubTotal + floridaTaxesAmount
+  const servicesTotal = services.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0)
+  const partsAndServicesTotal = partsTotal + servicesTotal
+  const globalDiscountPct = parseFloat(globalDiscount) || 0
+  const globalDiscountAmount = partsAndServicesTotal * (globalDiscountPct / 100)
+  const grandTotal = partsAndServicesTotal - globalDiscountAmount
 
   async function saveInvoice() {
-    const { error } = await supabase
-      .from('invoices')
-      .update({
-        entry_date: isValidDate(entryDate) ? entryDate : null,
-        delivery_date: isValidDate(deliveryDate) ? deliveryDate : null,
-        mileage: mileage ? parseFloat(mileage.replace(/,/g, '')) : null,
-        service: service || null,
-        florida_taxes: floridaTaxes ? parseFloat(floridaTaxes) : null,
-        global_discount: globalDiscount ? parseFloat(globalDiscount) : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', invoiceId)
-
+    const { error } = await supabase.from('invoices').update({
+      entry_date: isValidDate(entryDate) ? entryDate : null,
+      delivery_date: isValidDate(deliveryDate) ? deliveryDate : null,
+      mileage: mileage ? parseFloat(mileage.replace(/,/g, '')) : null,
+      service: service || null,
+      florida_taxes: floridaTaxes ? parseFloat(floridaTaxes) : null,
+      global_discount: globalDiscount ? parseFloat(globalDiscount) : null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', invoiceId)
     if (error) { alert(error.message); return }
 
     const newParts = parts.filter(p => !p.id)
     if (newParts.length > 0) {
-      const { error: partsError } = await supabase.from('invoice_parts').insert(newParts.map(p => ({
-        invoice_id: invoiceId,
-        description: p.description,
-        unit_price: parseFloat(p.unit_price),
-        quantity: parseFloat(p.quantity),
-      })))
-      if (partsError) { alert(partsError.message); return }
+      const { error: e } = await supabase.from('invoice_parts').insert(newParts.map(p => ({ invoice_id: invoiceId, description: p.description, unit_price: parseFloat(p.unit_price), quantity: parseFloat(p.quantity) })))
+      if (e) { alert(e.message); return }
     }
 
     const newServices = services.filter(s => !s.id)
     if (newServices.length > 0) {
-      const { error: servicesError } = await supabase.from('invoice_services').insert(newServices.map(s => ({
-        invoice_id: invoiceId,
-        description: s.description,
-        price: parseFloat(s.price),
-      })))
-      if (servicesError) { alert(servicesError.message); return }
+      const { error: e } = await supabase.from('invoice_services').insert(newServices.map(s => ({ invoice_id: invoiceId, description: s.description, price: parseFloat(s.price) || 0 })))
+      if (e) { alert(e.message); return }
     }
 
     router.push(`/rides/${rideId}/invoices`)
@@ -267,19 +170,13 @@ export default function EditInvoicePage() {
   const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
   const smallInputClass = 'bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg'
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-black text-white p-8">
-        <Header />
-        <p className="text-2xl text-gray-400">Loading...</p>
-      </main>
-    )
-  }
+  if (loading) return (
+    <main className="min-h-screen bg-black text-white p-8"><Header /><p className="text-2xl text-gray-400">Loading...</p></main>
+  )
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
-
       <h1 className="text-4xl font-bold mb-2">EDIT INVOICE</h1>
       <p className="text-gray-400 text-xl mb-8">{projectCode}{projectName ? ` — ${projectName}` : ''}</p>
 
@@ -328,6 +225,7 @@ export default function EditInvoicePage() {
               </div>
             </div>
             <button onClick={addPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PART</button>
+
             {parts.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {parts.map((part, index) => (
@@ -373,14 +271,28 @@ export default function EditInvoicePage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">FLORIDA TAXES (%)</label>
-          <div className="relative">
-            <input type="number" min="0" max="100" step="0.01" value={floridaTaxes} onChange={(e) => setFloridaTaxes(e.target.value)} className={`${inputClass} pr-10`} placeholder="0.00" />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl text-gray-400">%</span>
+            {/* Parts sub-total */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="text-gray-400 font-bold">PARTS SUB-TOTAL</span>
+              <span className="text-xl font-bold">{formatUSD(partsSubTotal)}</span>
+            </div>
+
+            {/* Florida Parts Taxes */}
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 font-bold whitespace-nowrap">FLORIDA PARTS TAXES</span>
+              <div className="relative w-28">
+                <input type="number" min="0" max="100" step="0.01" value={floridaTaxes} onChange={(e) => setFloridaTaxes(e.target.value)} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+              </div>
+              <span className="text-xl font-bold ml-auto">{formatUSD(floridaTaxesAmount)}</span>
+            </div>
+
+            {/* Parts total */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="font-bold text-lg">PARTS TOTAL</span>
+              <span className="text-2xl font-bold">{formatUSD(partsTotal)}</span>
+            </div>
           </div>
         </div>
 
@@ -399,6 +311,7 @@ export default function EditInvoicePage() {
               </div>
             </div>
             <button onClick={addService} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD SERVICE</button>
+
             {services.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {services.map((svc, index) => (
@@ -436,14 +349,34 @@ export default function EditInvoicePage() {
                 ))}
               </div>
             )}
+
+            {/* Services total */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="font-bold text-lg">SERVICES TOTAL</span>
+              <span className="text-2xl font-bold">{formatUSD(servicesTotal)}</span>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">GLOBAL DISCOUNT (%)</label>
-          <div className="relative">
-            <input type="number" min="0" max="100" step="0.01" value={globalDiscount} onChange={(e) => setGlobalDiscount(e.target.value)} className={`${inputClass} pr-10`} placeholder="0.00" />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl text-gray-400">%</span>
+        {/* TOTALS BOX */}
+        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 font-bold">PARTS + SERVICES TOTAL</span>
+            <span className="text-xl font-bold">{formatUSD(partsAndServicesTotal)}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-gray-400 font-bold whitespace-nowrap">GLOBAL DISCOUNT</span>
+            <div className="relative w-28">
+              <input type="number" min="0" max="100" step="0.01" value={globalDiscount} onChange={(e) => setGlobalDiscount(e.target.value)} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+            </div>
+            <span className="text-xl font-bold ml-auto text-red-400">- {formatUSD(globalDiscountAmount)}</span>
+          </div>
+
+          <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+            <span className="font-bold text-xl">GRAND TOTAL</span>
+            <span className="text-3xl font-bold">{formatUSD(grandTotal)}</span>
           </div>
         </div>
 

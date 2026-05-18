@@ -41,17 +41,10 @@ export default function NewInvoicePage() {
   const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null)
   const [editingService, setEditingService] = useState<Service>({ description: '', price: '' })
 
-  useEffect(() => {
-    loadRide()
-  }, [])
+  useEffect(() => { loadRide() }, [])
 
   async function loadRide() {
-    const { data: ride } = await supabase
-      .from('rides')
-      .select('project_code, project_name')
-      .eq('id', rideId)
-      .single()
-
+    const { data: ride } = await supabase.from('rides').select('project_code, project_name').eq('id', rideId).single()
     if (ride) {
       setProjectCode(ride.project_code || '')
       setProjectName(ride.project_name || '')
@@ -60,24 +53,17 @@ export default function NewInvoicePage() {
   }
 
   async function loadNextInvoiceCode(code: string) {
-    const { data } = await supabase
-      .from('invoices')
-      .select('invoice_code')
-      .eq('ride_id', rideId)
-
+    const { data } = await supabase.from('invoices').select('invoice_code').eq('ride_id', rideId)
     const usedNumbers = data?.map((item) => {
       const match = item.invoice_code?.match(/\.(\d+)$/)
       return match ? Number(match[1]) : null
     }) || []
-
     let nextNumber = 1
     while (usedNumbers.includes(nextNumber)) nextNumber++
     setInvoiceCode(`${code}.${nextNumber}`)
   }
 
-  function isValidDate(d: string) {
-    return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null
-  }
+  function isValidDate(d: string) { return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null }
 
   function formatMileage(value: string) {
     const clean = value.replace(/[^0-9.]/g, '')
@@ -88,122 +74,72 @@ export default function NewInvoicePage() {
 
   // Parts
   function addPart() {
-    if (!newPart.description || !newPart.unit_price || !newPart.quantity) {
-      alert('Please fill in all part fields')
-      return
-    }
+    if (!newPart.description || !newPart.unit_price || !newPart.quantity) { alert('Please fill in all part fields'); return }
     setParts([...parts, newPart])
     setNewPart({ description: '', unit_price: '', quantity: '1' })
   }
-
-  function removePart(index: number) {
-    setParts(parts.filter((_, i) => i !== index))
-  }
-
-  function startEditPart(index: number) {
-    setEditingPartIndex(index)
-    setEditingPart({ ...parts[index] })
-  }
-
+  function removePart(index: number) { setParts(parts.filter((_, i) => i !== index)) }
+  function startEditPart(index: number) { setEditingPartIndex(index); setEditingPart({ ...parts[index] }) }
   function saveEditPart() {
-    if (!editingPart.description || !editingPart.unit_price || !editingPart.quantity) {
-      alert('Please fill in all part fields')
-      return
-    }
-    const updated = [...parts]
-    updated[editingPartIndex!] = editingPart
-    setParts(updated)
-    setEditingPartIndex(null)
-    setEditingPart({ description: '', unit_price: '', quantity: '1' })
+    if (!editingPart.description || !editingPart.unit_price || !editingPart.quantity) { alert('Please fill in all part fields'); return }
+    const updated = [...parts]; updated[editingPartIndex!] = editingPart; setParts(updated)
+    setEditingPartIndex(null); setEditingPart({ description: '', unit_price: '', quantity: '1' })
   }
-
-  function cancelEditPart() {
-    setEditingPartIndex(null)
-    setEditingPart({ description: '', unit_price: '', quantity: '1' })
-  }
-
-  function getPartTotal(part: Part) {
-    return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0)
-  }
+  function cancelEditPart() { setEditingPartIndex(null); setEditingPart({ description: '', unit_price: '', quantity: '1' }) }
+  function getPartTotal(part: Part) { return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0) }
 
   // Services
   function addService() {
-    if (!newService.description || !newService.price) {
-      alert('Please fill in all service fields')
-      return
-    }
+    if (!newService.description) { alert('Please enter a description'); return }
     setServices([...services, newService])
     setNewService({ description: '', price: '' })
   }
-
-  function removeService(index: number) {
-    setServices(services.filter((_, i) => i !== index))
-  }
-
-  function startEditService(index: number) {
-    setEditingServiceIndex(index)
-    setEditingService({ ...services[index] })
-  }
-
+  function removeService(index: number) { setServices(services.filter((_, i) => i !== index)) }
+  function startEditService(index: number) { setEditingServiceIndex(index); setEditingService({ ...services[index] }) }
   function saveEditService() {
-    if (!editingService.description || !editingService.price) {
-      alert('Please fill in all service fields')
-      return
-    }
-    const updated = [...services]
-    updated[editingServiceIndex!] = editingService
-    setServices(updated)
-    setEditingServiceIndex(null)
-    setEditingService({ description: '', price: '' })
+    if (!editingService.description) { alert('Please enter a description'); return }
+    const updated = [...services]; updated[editingServiceIndex!] = editingService; setServices(updated)
+    setEditingServiceIndex(null); setEditingService({ description: '', price: '' })
   }
+  function cancelEditService() { setEditingServiceIndex(null); setEditingService({ description: '', price: '' }) }
 
-  function cancelEditService() {
-    setEditingServiceIndex(null)
-    setEditingService({ description: '', price: '' })
-  }
+  // Calculations
+  const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
+  const floridaTaxesPct = parseFloat(floridaTaxes) || 0
+  const floridaTaxesAmount = partsSubTotal * (floridaTaxesPct / 100)
+  const partsTotal = partsSubTotal + floridaTaxesAmount
+  const servicesTotal = services.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0)
+  const partsAndServicesTotal = partsTotal + servicesTotal
+  const globalDiscountPct = parseFloat(globalDiscount) || 0
+  const globalDiscountAmount = partsAndServicesTotal * (globalDiscountPct / 100)
+  const grandTotal = partsAndServicesTotal - globalDiscountAmount
 
   async function saveInvoice() {
-    const { data: invoice, error } = await supabase
-      .from('invoices')
-      .insert([{
-        invoice_code: invoiceCode,
-        ride_id: rideId,
-        entry_date: isValidDate(entryDate) ? entryDate : null,
-        delivery_date: isValidDate(deliveryDate) ? deliveryDate : null,
-        mileage: mileage ? parseFloat(mileage.replace(/,/g, '')) : null,
-        service: service || null,
-        florida_taxes: floridaTaxes ? parseFloat(floridaTaxes) : null,
-        global_discount: globalDiscount ? parseFloat(globalDiscount) : null,
-      }])
-      .select()
-      .single()
+    const { data: invoice, error } = await supabase.from('invoices').insert([{
+      invoice_code: invoiceCode, ride_id: rideId,
+      entry_date: isValidDate(entryDate) ? entryDate : null,
+      delivery_date: isValidDate(deliveryDate) ? deliveryDate : null,
+      mileage: mileage ? parseFloat(mileage.replace(/,/g, '')) : null,
+      service: service || null,
+      florida_taxes: floridaTaxes ? parseFloat(floridaTaxes) : null,
+      global_discount: globalDiscount ? parseFloat(globalDiscount) : null,
+    }]).select().single()
 
-    if (error || !invoice) {
-      alert(error?.message || 'Error saving invoice')
-      return
-    }
+    if (error || !invoice) { alert(error?.message || 'Error saving invoice'); return }
 
     if (parts.length > 0) {
-      const { error: partsError } = await supabase
-        .from('invoice_parts')
-        .insert(parts.map(p => ({
-          invoice_id: invoice.id,
-          description: p.description,
-          unit_price: parseFloat(p.unit_price),
-          quantity: parseFloat(p.quantity),
-        })))
-      if (partsError) { alert(partsError.message); return }
+      const { error: e } = await supabase.from('invoice_parts').insert(parts.map(p => ({
+        invoice_id: invoice.id, description: p.description,
+        unit_price: parseFloat(p.unit_price), quantity: parseFloat(p.quantity),
+      })))
+      if (e) { alert(e.message); return }
     }
 
     if (services.length > 0) {
-      const { error: servicesError } = await supabase
-        .from('invoice_services')
-        .insert(services.map(s => ({
-          invoice_id: invoice.id,
-          description: s.description,
-          price: parseFloat(s.price),
-        })))
-      if (servicesError) { alert(servicesError.message); return }
+      const { error: e } = await supabase.from('invoice_services').insert(services.map(s => ({
+        invoice_id: invoice.id, description: s.description, price: parseFloat(s.price) || 0,
+      })))
+      if (e) { alert(e.message); return }
     }
 
     router.push(`/rides/${rideId}/invoices`)
@@ -215,7 +151,6 @@ export default function NewInvoicePage() {
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
-
       <h1 className="text-4xl font-bold mb-2">ADD A NEW INVOICE</h1>
       <p className="text-gray-400 text-xl mb-8">{projectCode}{projectName ? ` — ${projectName}` : ''}</p>
 
@@ -243,6 +178,8 @@ export default function NewInvoicePage() {
         <div>
           <label className="block mb-3 text-lg font-bold">PARTS</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+
+            {/* Add form */}
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -264,6 +201,8 @@ export default function NewInvoicePage() {
               </div>
             </div>
             <button onClick={addPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PART</button>
+
+            {/* Parts list */}
             {parts.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {parts.map((part, index) => (
@@ -309,14 +248,34 @@ export default function NewInvoicePage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">FLORIDA TAXES (%)</label>
-          <div className="relative">
-            <input type="number" min="0" max="100" step="0.01" value={floridaTaxes} onChange={(e) => setFloridaTaxes(e.target.value)} className={`${inputClass} pr-10`} placeholder="0.00" />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl text-gray-400">%</span>
+            {/* Parts sub-total */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="text-gray-400 font-bold">PARTS SUB-TOTAL</span>
+              <span className="text-xl font-bold">{formatUSD(partsSubTotal)}</span>
+            </div>
+
+            {/* Florida Parts Taxes */}
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 font-bold whitespace-nowrap">FLORIDA PARTS TAXES</span>
+              <div className="relative w-28">
+                <input
+                  type="number" min="0" max="100" step="0.01"
+                  value={floridaTaxes}
+                  onChange={(e) => setFloridaTaxes(e.target.value)}
+                  className={`${smallInputClass} w-full pr-6`}
+                  placeholder="0.00"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+              </div>
+              <span className="text-xl font-bold ml-auto">{formatUSD(floridaTaxesAmount)}</span>
+            </div>
+
+            {/* Parts total */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="font-bold text-lg">PARTS TOTAL</span>
+              <span className="text-2xl font-bold">{formatUSD(partsTotal)}</span>
+            </div>
           </div>
         </div>
 
@@ -335,6 +294,8 @@ export default function NewInvoicePage() {
               </div>
             </div>
             <button onClick={addService} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD SERVICE</button>
+
+            {/* Services list */}
             {services.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {services.map((svc, index) => (
@@ -372,14 +333,40 @@ export default function NewInvoicePage() {
                 ))}
               </div>
             )}
+
+            {/* Services total */}
+            <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+              <span className="font-bold text-lg">SERVICES TOTAL</span>
+              <span className="text-2xl font-bold">{formatUSD(servicesTotal)}</span>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">GLOBAL DISCOUNT (%)</label>
-          <div className="relative">
-            <input type="number" min="0" max="100" step="0.01" value={globalDiscount} onChange={(e) => setGlobalDiscount(e.target.value)} className={`${inputClass} pr-10`} placeholder="0.00" />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl text-gray-400">%</span>
+        {/* TOTALS BOX */}
+        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400 font-bold">PARTS + SERVICES TOTAL</span>
+            <span className="text-xl font-bold">{formatUSD(partsAndServicesTotal)}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-gray-400 font-bold whitespace-nowrap">GLOBAL DISCOUNT</span>
+            <div className="relative w-28">
+              <input
+                type="number" min="0" max="100" step="0.01"
+                value={globalDiscount}
+                onChange={(e) => setGlobalDiscount(e.target.value)}
+                className={`${smallInputClass} w-full pr-6`}
+                placeholder="0.00"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+            </div>
+            <span className="text-xl font-bold ml-auto text-red-400">- {formatUSD(globalDiscountAmount)}</span>
+          </div>
+
+          <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
+            <span className="font-bold text-xl">GRAND TOTAL</span>
+            <span className="text-3xl font-bold">{formatUSD(grandTotal)}</span>
           </div>
         </div>
 
