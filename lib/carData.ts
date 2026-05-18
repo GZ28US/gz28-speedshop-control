@@ -1,10 +1,14 @@
 export const years = [
+  1968, 1969, 1970,
   1992, 1993, 1994, 1995,
   2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017,
   2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026,
 ]
 
 export const manufacturersByYear: Record<number, string[]> = {
+  1968: ['MOPAR'],
+  1969: ['MOPAR'],
+  1970: ['MOPAR'],
   1992: ['MOPAR'],
   1993: ['MOPAR'],
   1994: ['MOPAR'],
@@ -31,6 +35,7 @@ export const manufacturersByYear: Record<number, string[]> = {
 
 export const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
   MOPAR: {
+    1968: ['DODGE'], 1969: ['DODGE'], 1970: ['DODGE'],
     1992: ['DODGE'], 1993: ['DODGE'], 1994: ['DODGE'], 1995: ['DODGE'],
     2009: ['RAM'], 2010: ['RAM'], 2011: ['RAM'], 2012: ['RAM'], 2013: ['RAM'],
     2014: ['RAM'], 2015: ['RAM'], 2016: ['RAM'], 2017: ['RAM'], 2018: ['DODGE', 'RAM'],
@@ -50,6 +55,9 @@ export const brandsByManufacturerAndYear: Record<string, Record<number, string[]
 
 export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
   DODGE: {
+    1968: ['CHARGER'],
+    1969: ['CHARGER'],
+    1970: ['CHARGER'],
     1992: ['VIPER'], 1993: ['VIPER'], 1994: ['VIPER'], 1995: ['VIPER'],
     2018: ['CHALLENGER', 'CHARGER'],
     2019: ['CHALLENGER', 'CHARGER'],
@@ -78,6 +86,18 @@ export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
 }
 
 export const versionsByModelAndYear: Record<string, Record<number, string[]>> = {
+  CHARGER: {
+    1968: ['Base 5.2 V8', 'R/T 6.3 V8', 'R/T 7.0 V8 HEMI'],
+    1969: ['Base 5.2 V8', '500 6.3 V8', 'R/T 6.3 V8', 'R/T 7.0 V8 HEMI', 'Daytona 6.6 V8', 'Daytona 7.0 V8 HEMI'],
+    1970: ['Base 5.2 V8', '500 6.3 V8', 'R/T 6.3 V8', 'R/T 7.2 V8', 'R/T 7.0 V8 HEMI'],
+    2018: ['R/T 5.7', 'ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2'],
+    2019: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2020: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2021: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2022: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2023: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+    2024: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
+  },
   VIPER: {
     1992: ['RT/10 8.0 V10'],
     1993: ['RT/10 8.0 V10'],
@@ -92,15 +112,6 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2022: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2'],
     2023: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2', 'SRT HellCat RedEye SuperStock 6.2', 'SRT Demon 170 6.2'],
     2024: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-  },
-  CHARGER: {
-    2018: ['R/T 5.7', 'ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2'],
-    2019: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2020: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2021: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2022: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2023: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
-    2024: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
   },
   DURANGO: {
     2021: ['SRT HellCat 6.2'],
@@ -178,6 +189,12 @@ const viperColorsByYear: Record<number, string[]> = {
   1995: ['Red', 'Black', 'White', 'Emerald Green', 'Dandelion Yellow'],
 }
 
+const classicChargerColorsByYear: Record<number, string[]> = {
+  1968: ['Silver', 'Black', 'Medium Blue', 'Pale Blue', 'Dark Blue', 'Light Green', 'Racing Green', 'Light Gold', 'Medium Gold', 'Light Turquoise', 'Dark Turquoise', 'Bronze', 'Matador Red', 'Bright Blue', 'Burgundy', 'Sunfire Yellow', 'Avocado Green', 'White', 'Beige', 'Sierra Tan', 'Charger Red', 'Hawaiian Blue', 'Dark Green'],
+  1969: ['B5 Blue', 'Black', 'Charger Red', 'F8 Green', 'White', 'Silver', 'Dark Green', 'Medium Blue', 'Bahama Yellow', 'Hemi Orange', 'Turquoise', 'Burgundy', 'Light Gold', 'Bronze'],
+  1970: ['Black', 'White', 'Silver', 'B5 Blue', 'Dark Blue', 'F8 Green', 'Go Mango', 'Sublime', 'Plum Crazy', 'Hemi Orange', 'Banana', 'Green Go', 'Panther Pink', 'Butterscotch', 'Bronze', 'Rallye Red', 'Dark Tan'],
+}
+
 const corvetteColorsByYear: Record<number, string[]> = {
   2014: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Cyber Gray', 'Laguna Blue', 'Lime Rock Green', 'Night Race Blue', 'Torch Red', 'Velocity Yellow'],
   2015: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Daytona Sunrise Orange', 'Laguna Blue', 'Night Race Blue', 'Shark Gray', 'Torch Red', 'Velocity Yellow'],
@@ -212,6 +229,7 @@ const colorsByConfiguration: Record<string, string[]> = {
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
   const key = `${year}-${model}-${version}-${specialEdition}`
   if (colorsByConfiguration[key]) return colorsByConfiguration[key]
+  if (model === 'CHARGER' && classicChargerColorsByYear[year]) return classicChargerColorsByYear[year]
   if (model === 'VIPER' && viperColorsByYear[year]) return viperColorsByYear[year]
   if (model === 'CORVETTE' && corvetteColorsByYear[year]) return corvetteColorsByYear[year]
   if (model === 'DURANGO' && year === 2026) return durangoColors2026
