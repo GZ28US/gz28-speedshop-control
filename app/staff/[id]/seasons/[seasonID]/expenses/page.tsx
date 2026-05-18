@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 type Expense = {
   id: string
   type: string
+  description: string | null
   amount: number
   expense_date: string
 }
@@ -134,7 +135,6 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Total */}
       {expenses.length > 0 && (
         <div className="bg-red-700 rounded-3xl p-6 mb-8 max-w-sm">
           <p className="text-xl font-bold">TOTAL EXPENSES</p>
@@ -155,6 +155,9 @@ export default function ExpensesPage() {
             >
               <div>
                 <h2 className="text-2xl font-bold">${Number(expense.amount).toFixed(2)}</h2>
+                {expense.description && (
+                  <p className="text-lg text-white">{expense.description}</p>
+                )}
                 <p className="text-lg text-gray-400">{expense.type}</p>
                 <p className="text-lg text-gray-400">{formatDate(expense.expense_date)}</p>
               </div>

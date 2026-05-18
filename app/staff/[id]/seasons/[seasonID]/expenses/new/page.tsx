@@ -25,6 +25,7 @@ export default function NewExpensePage() {
   const [seasonCode, setSeasonCode] = useState('')
   const [staffName, setStaffName] = useState('')
   const [type, setType] = useState('SINGLE')
+  const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [expenseDate, setExpenseDate] = useState(getTodayString())
 
@@ -63,6 +64,7 @@ export default function NewExpensePage() {
       .insert([{
         season_id: seasonID,
         type,
+        description: description || null,
         amount: parseFloat(amount),
         expense_date: expenseDate,
       }])
@@ -105,6 +107,17 @@ export default function NewExpensePage() {
           value={expenseDate}
           onChange={setExpenseDate}
         />
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">DESCRIPTION</label>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={inputClass}
+            placeholder="Optional description"
+          />
+        </div>
 
         <div>
           <label className="block mb-2 text-lg font-bold">AMOUNT (USD)</label>

@@ -19,6 +19,7 @@ export default function EditExpensePage() {
   const [seasonCode, setSeasonCode] = useState('')
   const [staffName, setStaffName] = useState('')
   const [type, setType] = useState('SINGLE')
+  const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [expenseDate, setExpenseDate] = useState('')
 
@@ -61,6 +62,7 @@ export default function EditExpensePage() {
     }
 
     setType(data.type || 'SINGLE')
+    setDescription(data.description || '')
     setAmount(String(data.amount || ''))
     setExpenseDate(data.expense_date || '')
     setLoading(false)
@@ -76,6 +78,7 @@ export default function EditExpensePage() {
       .from('expenses')
       .update({
         type,
+        description: description || null,
         amount: parseFloat(amount),
         expense_date: expenseDate,
         updated_at: new Date().toISOString(),
@@ -129,6 +132,17 @@ export default function EditExpensePage() {
           value={expenseDate}
           onChange={setExpenseDate}
         />
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">DESCRIPTION</label>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={inputClass}
+            placeholder="Optional description"
+          />
+        </div>
 
         <div>
           <label className="block mb-2 text-lg font-bold">AMOUNT (USD)</label>
