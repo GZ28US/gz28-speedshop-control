@@ -38,6 +38,8 @@ type Expense = {
 
 const paymentSources = ['CASH', 'ACH', 'ZELLE', 'CHECK']
 
+function isNumeric(v: string) { return v === '' || /^\d*\.?\d*$/.test(v) }
+
 export default function NewInvoicePage() {
   const params = useParams()
   const router = useRouter()
@@ -75,25 +77,6 @@ export default function NewInvoicePage() {
 
   useEffect(() => { loadRide() }, [])
 
-  // Rebuild expenses row 0 (Florida Taxes) whenever entryDate or floridaTaxesAmount changes
-  useEffect(() => {
-    const floridaTaxesPct = parseFloat(floridaTaxes) || 0
-    const partsSubTotal = parts.reduce((sum, p) => sum + (parseFloat(p.unit_price) || 0) * (parseFloat(p.quantity) || 0), 0)
-    const floridaTaxesAmount = partsSubTotal * (floridaTaxesPct / 100)
-
-    setExpenses(prev => {
-      const updated = [...prev]
-      updated[0] = {
-        expense_date: isValidDate(entryDate) ? entryDate : '',
-        supplier: 'Florida State',
-        item: 'Taxes',
-        amount: floridaTaxesAmount.toFixed(2),
-        payment_date: prev[0]?.payment_date || '',
-      }
-      return updated
-    })
-  }, [entryDate, floridaTaxes, parts])
-
   async function loadRide() {
     const { data: ride } = await supabase.from('rides').select('project_code, project_name').eq('id', rideId).single()
     if (ride) {
@@ -130,61 +113,52 @@ export default function NewInvoicePage() {
 
   function getPartTotal(part: Part) { return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0) }
 
-  // Parts — when a part is added, append its expense row right after Florida Taxes + existing part rows
-  function addPart() {
-    if (!newPart.description || !newPart.unit_price || !newPart.quantity) { alert('Please fill in all part fields'); return }
-    const partTotal = getPartTotal(newPart)
-    setParts(prev => [...prev, newPart])
-    setExpenses(prev => {
-      // Florida Taxes is index 0, parts start at index 1
-      // Find where user-added expenses start: after index 0 + existing parts count
-      const existingPartsCount = prev.length > 0 ? prev.length - 1 : 0
-      // But we need to track which are part-expenses vs user expenses
-      // Simple: insert new part expense right before any user-added ones
-      // We track: [floridaTaxes, ...partExpenses, ...userExpenses]
-      // partExpenses count = parts.length (before adding)
-      const insertAt = 1 + parts.length // index right after last part expense
-      const newPartExpense: Expense = {
+  // UPDATE INTUITIVE EXPENSES
+  function updateIntuitiveExpenses() {
+    const floridaTaxesPct = parseFloat(floridaTaxes) || 0
+    const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
+    const floridaTaxesAmount = partsSubTotal * (floridaTaxesPct / 100)
+
+    const intuitiveExpenses: Expense[] = [
+      {
+        expense_date: isValidDate(entryDate) ? entryDate : '',
+        supplier: 'Florida State',
+        item: 'Taxes',
+        amount: floridaTaxesAmount.toFixed(2),
+        payment_date: '',
+      },
+      ...parts.map(p => ({
         expense_date: isValidDate(entryDate) ? entryDate : '',
         supplier: '',
-        item: newPart.description,
-        amount: partTotal.toFixed(2),
+        item: p.description,
+        amount: getPartTotal(p).toFixed(2),
         payment_date: '',
-      }
-      const updated = [...prev]
-      updated.splice(insertAt, 0, newPartExpense)
-      return updated
-    })
-    setNewPart({ description: '', unit_price: '', quantity: '1' })
+      })),
+    ]
+
+    // Preserve user-added expenses (anything not previously intuitive)
+    // User expenses are those added manually — we keep everything after the last intuitive block
+    // Simple approach: replace all intuitive rows, keep user-added ones at the end
+    const userExpenses = expenses.filter(e =>
+      e.supplier !== 'Florida State' &&
+      !parts.some(p => p.description === e.item && !e.supplier)
+    )
+
+    setExpenses([...intuitiveExpenses, ...userExpenses])
   }
 
-  function removePart(index: number) {
-    // Remove corresponding expense: index + 1 (offset by Florida Taxes at 0)
-    setParts(prev => prev.filter((_, i) => i !== index))
-    setExpenses(prev => prev.filter((_, i) => i !== index + 1))
+  // Parts
+  function addPart() {
+    if (!newPart.description || !newPart.unit_price || !newPart.quantity) { alert('Please fill in all part fields'); return }
+    setParts([...parts, newPart]); setNewPart({ description: '', unit_price: '', quantity: '1' })
   }
-
+  function removePart(index: number) { setParts(parts.filter((_, i) => i !== index)) }
   function startEditPart(index: number) { setEditingPartIndex(index); setEditingPart({ ...parts[index] }) }
-
   function saveEditPart() {
     if (!editingPart.description || !editingPart.unit_price || !editingPart.quantity) { alert('Please fill in all part fields'); return }
-    const partTotal = getPartTotal(editingPart)
     const updated = [...parts]; updated[editingPartIndex!] = editingPart; setParts(updated)
-    // Update corresponding expense row
-    setExpenses(prev => {
-      const updatedExp = [...prev]
-      const expIndex = editingPartIndex! + 1
-      updatedExp[expIndex] = {
-        ...updatedExp[expIndex],
-        item: editingPart.description,
-        amount: partTotal.toFixed(2),
-        expense_date: isValidDate(entryDate) ? entryDate : updatedExp[expIndex].expense_date,
-      }
-      return updatedExp
-    })
     setEditingPartIndex(null); setEditingPart({ description: '', unit_price: '', quantity: '1' })
   }
-
   function cancelEditPart() { setEditingPartIndex(null); setEditingPart({ description: '', unit_price: '', quantity: '1' }) }
 
   // Services
@@ -229,55 +203,19 @@ export default function NewInvoicePage() {
   }
   function cancelEditNote() { setEditingNoteIndex(null); setEditingNote('') }
 
-  // Expenses (user-added only, after index 1 + parts.length)
-  const userExpenseStartIndex = 1 + parts.length
-
+  // Expenses
   function addExpense() {
     if (!newExpense.item || !newExpense.amount) { alert('Please enter at least item and amount'); return }
-    setExpenses(prev => [...prev, newExpense])
-    setNewExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
+    setExpenses([...expenses, newExpense]); setNewExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
   }
-  function removeExpense(index: number) {
-    // index here is relative to user expenses, convert to absolute
-    const absIndex = userExpenseStartIndex + index
-    setExpenses(prev => prev.filter((_, i) => i !== absIndex))
-  }
-  function startEditExpense(index: number) {
-    setEditingExpenseIndex(index)
-    setEditingExpense({ ...expenses[userExpenseStartIndex + index] })
-  }
+  function removeExpense(index: number) { setExpenses(expenses.filter((_, i) => i !== index)) }
+  function startEditExpense(index: number) { setEditingExpenseIndex(index); setEditingExpense({ ...expenses[index] }) }
   function saveEditExpense() {
     if (!editingExpense.item || !editingExpense.amount) { alert('Please enter at least item and amount'); return }
-    setExpenses(prev => {
-      const updated = [...prev]
-      updated[userExpenseStartIndex + editingExpenseIndex!] = editingExpense
-      return updated
-    })
-    setEditingExpenseIndex(null)
-    setEditingExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
+    const updated = [...expenses]; updated[editingExpenseIndex!] = editingExpense; setExpenses(updated)
+    setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
   }
   function cancelEditExpense() { setEditingExpenseIndex(null); setEditingExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' }) }
-
-  // For editing any expense in the full list (pre-added or user)
-  const [editingFullExpenseIndex, setEditingFullExpenseIndex] = useState<number | null>(null)
-  const [editingFullExpense, setEditingFullExpense] = useState<Expense>({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
-
-  function startEditFullExpense(index: number) { setEditingFullExpenseIndex(index); setEditingFullExpense({ ...expenses[index] }) }
-  function saveEditFullExpense() {
-    if (!editingFullExpense.item || !editingFullExpense.amount) { alert('Please enter at least item and amount'); return }
-    setExpenses(prev => { const updated = [...prev]; updated[editingFullExpenseIndex!] = editingFullExpense; return updated })
-    setEditingFullExpenseIndex(null); setEditingFullExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' })
-  }
-  function cancelEditFullExpense() { setEditingFullExpenseIndex(null); setEditingFullExpense({ expense_date: '', supplier: '', item: '', amount: '', payment_date: '' }) }
-  function removeFullExpense(index: number) {
-    // Don't allow removing Florida Taxes (index 0) or part expenses (index 1 to parts.length)
-    // Actually per instructions all are removable
-    setExpenses(prev => prev.filter((_, i) => i !== index))
-    // If it's a part expense, also remove the part
-    if (index >= 1 && index <= parts.length) {
-      setParts(prev => prev.filter((_, i) => i !== index - 1))
-    }
-  }
 
   // Calculations
   const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
@@ -382,11 +320,11 @@ export default function NewInvoicePage() {
             <div className="flex gap-3">
               <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
                 <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                  <input type="number" min="0" step="0.01" placeholder="0.00" value={newPart.unit_price} onChange={(e) => setNewPart({ ...newPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                  <input type="text" inputMode="decimal" placeholder="0.00" value={newPart.unit_price} onChange={(e) => { if (isNumeric(e.target.value)) setNewPart({ ...newPart, unit_price: e.target.value }) }} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
               <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
-                <input type="number" min="1" step="1" placeholder="1" value={newPart.quantity} onChange={(e) => setNewPart({ ...newPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
+                <input type="text" inputMode="decimal" placeholder="1" value={newPart.quantity} onChange={(e) => { if (isNumeric(e.target.value)) setNewPart({ ...newPart, quantity: e.target.value }) }} className={`${smallInputClass} w-full`} />
               </div>
               <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">TOTAL</label>
                 <div className={`${smallInputClass} w-full opacity-50`}>{newPart.unit_price && newPart.quantity ? formatUSD(parseFloat(newPart.unit_price || '0') * parseFloat(newPart.quantity || '0')) : '$0.00'}</div>
@@ -403,11 +341,11 @@ export default function NewInvoicePage() {
                         <div className="flex gap-3">
                           <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
                             <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                              <input type="number" min="0" step="0.01" value={editingPart.unit_price} onChange={(e) => setEditingPart({ ...editingPart, unit_price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                              <input type="text" inputMode="decimal" value={editingPart.unit_price} onChange={(e) => { if (isNumeric(e.target.value)) setEditingPart({ ...editingPart, unit_price: e.target.value }) }} className={`${smallInputClass} w-full pl-8`} />
                             </div>
                           </div>
                           <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
-                            <input type="number" min="1" step="1" value={editingPart.quantity} onChange={(e) => setEditingPart({ ...editingPart, quantity: e.target.value })} className={`${smallInputClass} w-full`} />
+                            <input type="text" inputMode="decimal" value={editingPart.quantity} onChange={(e) => { if (isNumeric(e.target.value)) setEditingPart({ ...editingPart, quantity: e.target.value }) }} className={`${smallInputClass} w-full`} />
                           </div>
                           <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">TOTAL</label>
                             <div className={`${smallInputClass} w-full opacity-50`}>{formatUSD((parseFloat(editingPart.unit_price || '0')) * (parseFloat(editingPart.quantity || '0')))}</div>
@@ -441,7 +379,7 @@ export default function NewInvoicePage() {
             <div className="flex items-center gap-3">
               <span className="text-gray-400 font-bold whitespace-nowrap">FLORIDA PARTS TAXES</span>
               <div className="relative w-28">
-                <input type="number" min="0" max="100" step="0.01" value={floridaTaxes} onChange={(e) => setFloridaTaxes(e.target.value)} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
+                <input type="text" inputMode="decimal" value={floridaTaxes} onChange={(e) => { if (isNumeric(e.target.value)) setFloridaTaxes(e.target.value) }} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
               </div>
               <span className="text-xl font-bold ml-auto">{formatUSD(floridaTaxesAmount)}</span>
@@ -461,7 +399,7 @@ export default function NewInvoicePage() {
             <div className="flex gap-3">
               <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                 <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                  <input type="number" min="0" step="0.01" placeholder="0.00" value={newService.price} onChange={(e) => setNewService({ ...newService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                  <input type="text" inputMode="decimal" placeholder="0.00" value={newService.price} onChange={(e) => { if (isNumeric(e.target.value)) setNewService({ ...newService, price: e.target.value }) }} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
             </div>
@@ -476,7 +414,7 @@ export default function NewInvoicePage() {
                         <div className="flex gap-3">
                           <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                             <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                              <input type="number" min="0" step="0.01" value={editingService.price} onChange={(e) => setEditingService({ ...editingService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                              <input type="text" inputMode="decimal" value={editingService.price} onChange={(e) => { if (isNumeric(e.target.value)) setEditingService({ ...editingService, price: e.target.value }) }} className={`${smallInputClass} w-full pl-8`} />
                             </div>
                           </div>
                         </div>
@@ -517,7 +455,7 @@ export default function NewInvoicePage() {
           <div className="flex items-center gap-3">
             <span className="text-gray-400 font-bold whitespace-nowrap">GLOBAL DISCOUNT</span>
             <div className="relative w-28">
-              <input type="number" min="0" max="100" step="0.01" value={globalDiscount} onChange={(e) => setGlobalDiscount(e.target.value)} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
+              <input type="text" inputMode="decimal" value={globalDiscount} onChange={(e) => { if (isNumeric(e.target.value)) setGlobalDiscount(e.target.value) }} className={`${smallInputClass} w-full pr-6`} placeholder="0.00" />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
             </div>
             <span className="text-xl font-bold ml-auto text-red-400">- {formatUSD(globalDiscountAmount)}</span>
@@ -535,7 +473,7 @@ export default function NewInvoicePage() {
             <div className="flex gap-3">
               <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                 <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                  <input type="number" min="0" step="0.01" placeholder="0.00" value={newPayment.amount} onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                  <input type="text" inputMode="decimal" placeholder="0.00" value={newPayment.amount} onChange={(e) => { if (isNumeric(e.target.value)) setNewPayment({ ...newPayment, amount: e.target.value }) }} className={`${smallInputClass} w-full pl-8`} />
                 </div>
               </div>
               <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">SOURCE</label>
@@ -555,7 +493,7 @@ export default function NewInvoicePage() {
                         <div className="flex gap-3">
                           <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                             <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                              <input type="number" min="0" step="0.01" value={editingPayment.amount} onChange={(e) => setEditingPayment({ ...editingPayment, amount: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                              <input type="text" inputMode="decimal" value={editingPayment.amount} onChange={(e) => { if (isNumeric(e.target.value)) setEditingPayment({ ...editingPayment, amount: e.target.value }) }} className={`${smallInputClass} w-full pl-8`} />
                             </div>
                           </div>
                           <div className="flex-1"><label className="block mb-1 text-sm text-gray-400">SOURCE</label>
@@ -644,13 +582,20 @@ export default function NewInvoicePage() {
             </div>
             <div><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
               <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                <input type="number" min="0" step="0.01" placeholder="0.00" value={newExpense.amount} onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })} className={`${inputClass} pl-10`} />
+                <input type="text" inputMode="decimal" placeholder="0.00" value={newExpense.amount} onChange={(e) => { if (isNumeric(e.target.value)) setNewExpense({ ...newExpense, amount: e.target.value }) }} className={`${inputClass} pl-10`} />
               </div>
             </div>
             <DatePicker label="PAYMENT DATE" value={newExpense.payment_date} onChange={(v) => setNewExpense({ ...newExpense, payment_date: v })} />
+
+            <button
+              onClick={updateIntuitiveExpenses}
+              className="w-full bg-yellow-700 hover:bg-yellow-600 px-5 py-3 rounded-2xl font-bold text-lg"
+            >
+              ↻ UPDATE INTUITIVE EXPENSES
+            </button>
+
             <button onClick={addExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD EXPENSE</button>
 
-            {/* All expenses list */}
             {expenses.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {expenses.map((exp, index) => {
@@ -658,24 +603,24 @@ export default function NewInvoicePage() {
                   const rowColor = isPaid ? 'text-blue-400' : 'text-red-400'
                   return (
                     <div key={index}>
-                      {editingFullExpenseIndex === index ? (
+                      {editingExpenseIndex === index ? (
                         <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
-                          <DatePicker label="DATE" value={editingFullExpense.expense_date} onChange={(v) => setEditingFullExpense({ ...editingFullExpense, expense_date: v })} />
+                          <DatePicker label="DATE" value={editingExpense.expense_date} onChange={(v) => setEditingExpense({ ...editingExpense, expense_date: v })} />
                           <div><label className="block mb-1 text-sm text-gray-400">SUPPLIER</label>
-                            <input type="text" value={editingFullExpense.supplier} onChange={(e) => setEditingFullExpense({ ...editingFullExpense, supplier: e.target.value })} className={inputClass} />
+                            <input type="text" value={editingExpense.supplier} onChange={(e) => setEditingExpense({ ...editingExpense, supplier: e.target.value })} className={inputClass} />
                           </div>
                           <div><label className="block mb-1 text-sm text-gray-400">ITEM</label>
-                            <input type="text" value={editingFullExpense.item} onChange={(e) => setEditingFullExpense({ ...editingFullExpense, item: e.target.value })} className={inputClass} />
+                            <input type="text" value={editingExpense.item} onChange={(e) => setEditingExpense({ ...editingExpense, item: e.target.value })} className={inputClass} />
                           </div>
                           <div><label className="block mb-1 text-sm text-gray-400">AMOUNT</label>
                             <div className="relative"><span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                              <input type="number" min="0" step="0.01" value={editingFullExpense.amount} onChange={(e) => setEditingFullExpense({ ...editingFullExpense, amount: e.target.value })} className={`${inputClass} pl-10`} />
+                              <input type="text" inputMode="decimal" value={editingExpense.amount} onChange={(e) => { if (isNumeric(e.target.value)) setEditingExpense({ ...editingExpense, amount: e.target.value }) }} className={`${inputClass} pl-10`} />
                             </div>
                           </div>
-                          <DatePicker label="PAYMENT DATE" value={editingFullExpense.payment_date} onChange={(v) => setEditingFullExpense({ ...editingFullExpense, payment_date: v })} />
+                          <DatePicker label="PAYMENT DATE" value={editingExpense.payment_date} onChange={(v) => setEditingExpense({ ...editingExpense, payment_date: v })} />
                           <div className="flex gap-3">
-                            <button onClick={saveEditFullExpense} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
-                            <button onClick={cancelEditFullExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                            <button onClick={saveEditExpense} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                            <button onClick={cancelEditExpense} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
                           </div>
                         </div>
                       ) : (
@@ -689,8 +634,8 @@ export default function NewInvoicePage() {
                             <p className="text-sm text-gray-500">{isPaid ? `Paid: ${formatDate(exp.payment_date)}` : 'Not paid yet'}</p>
                           </div>
                           <div className="flex gap-2 shrink-0">
-                            <button onClick={() => startEditFullExpense(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
-                            <button onClick={() => removeFullExpense(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                            <button onClick={() => startEditExpense(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                            <button onClick={() => removeExpense(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
                           </div>
                         </div>
                       )}
