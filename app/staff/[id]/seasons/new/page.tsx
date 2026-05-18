@@ -12,13 +12,11 @@ export default function NewSeasonPage() {
   const staffId = String(params.id)
 
   const [staffName, setStaffName] = useState('')
-  const [seasonCode, setSeasonCode] = useState('US.001')
   const [dateEntry, setDateEntry] = useState('')
   const [dateConclusion, setDateConclusion] = useState('')
 
   useEffect(() => {
     loadStaffName()
-    loadNextSeasonCode()
   }, [])
 
   async function loadStaffName() {
@@ -31,21 +29,22 @@ export default function NewSeasonPage() {
     setStaffName(data?.name || '')
   }
 
-  async function loadNextSeasonCode() {
+  async function renumberSeasons() {
     const { data } = await supabase
       .from('seasons')
-      .select('season_code')
+      .select('id, date_entry')
       .eq('staff_id', staffId)
+      .order('date_entry', { ascending: true })
 
-    const usedNumbers = data?.map((item) => {
-      const match = item.season_code?.match(/US\.(\d+)/)
-      return match ? Number(match[1]) : null
-    }) || []
+    if (!data) return
 
-    let nextNumber = 1
-    while (usedNumbers.includes(nextNumber)) nextNumber++
-
-    setSeasonCode(`US.${String(nextNumber).padStart(3, '0')}`)
+    for (let i = 0; i < data.length; i++) {
+      const code = `US.${String(i + 1).padStart(3, '0')}`
+      await supabase
+        .from('seasons')
+        .update({ season_code: code })
+        .eq('id', data[i].id)
+    }
   }
 
   function isValidDate(d: string) {
@@ -56,7 +55,7 @@ export default function NewSeasonPage() {
     const { error } = await supabase
       .from('seasons')
       .insert([{
-        season_code: seasonCode,
+        season_code: 'TMP',
         staff_id: staffId,
         date_entry: isValidDate(dateEntry) ? dateEntry : null,
         date_conclusion: isValidDate(dateConclusion) ? dateConclusion : null,
@@ -67,10 +66,9 @@ export default function NewSeasonPage() {
       return
     }
 
+    await renumberSeasons()
     router.push(`/staff/${staffId}/seasons`)
   }
-
-  const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -80,15 +78,6 @@ export default function NewSeasonPage() {
       <p className="text-gray-400 text-xl mb-8">{staffName}</p>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">SEASON CODE</label>
-          <input
-            value={seasonCode}
-            onChange={(e) => setSeasonCode(e.target.value)}
-            className={inputClass}
-          />
-        </div>
 
         <DatePicker
           label="DATE OF ENTRY"
