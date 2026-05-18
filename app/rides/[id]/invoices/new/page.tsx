@@ -13,6 +13,11 @@ type Part = {
   quantity: string
 }
 
+type Service = {
+  description: string
+  price: string
+}
+
 export default function NewInvoicePage() {
   const params = useParams()
   const router = useRouter()
@@ -31,6 +36,10 @@ export default function NewInvoicePage() {
   const [newPart, setNewPart] = useState<Part>({ description: '', unit_price: '', quantity: '1' })
   const [editingPartIndex, setEditingPartIndex] = useState<number | null>(null)
   const [editingPart, setEditingPart] = useState<Part>({ description: '', unit_price: '', quantity: '1' })
+  const [services, setServices] = useState<Service[]>([])
+  const [newService, setNewService] = useState<Service>({ description: '', price: '' })
+  const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null)
+  const [editingService, setEditingService] = useState<Service>({ description: '', price: '' })
 
   useEffect(() => {
     loadRide()
@@ -77,6 +86,7 @@ export default function NewInvoicePage() {
     return partsArr.length > 1 ? `${intPart}.${partsArr[1]}` : intPart
   }
 
+  // Parts
   function addPart() {
     if (!newPart.description || !newPart.unit_price || !newPart.quantity) {
       alert('Please fill in all part fields')
@@ -116,6 +126,42 @@ export default function NewInvoicePage() {
     return (parseFloat(part.unit_price) || 0) * (parseFloat(part.quantity) || 0)
   }
 
+  // Services
+  function addService() {
+    if (!newService.description || !newService.price) {
+      alert('Please fill in all service fields')
+      return
+    }
+    setServices([...services, newService])
+    setNewService({ description: '', price: '' })
+  }
+
+  function removeService(index: number) {
+    setServices(services.filter((_, i) => i !== index))
+  }
+
+  function startEditService(index: number) {
+    setEditingServiceIndex(index)
+    setEditingService({ ...services[index] })
+  }
+
+  function saveEditService() {
+    if (!editingService.description || !editingService.price) {
+      alert('Please fill in all service fields')
+      return
+    }
+    const updated = [...services]
+    updated[editingServiceIndex!] = editingService
+    setServices(updated)
+    setEditingServiceIndex(null)
+    setEditingService({ description: '', price: '' })
+  }
+
+  function cancelEditService() {
+    setEditingServiceIndex(null)
+    setEditingService({ description: '', price: '' })
+  }
+
   async function saveInvoice() {
     const { data: invoice, error } = await supabase
       .from('invoices')
@@ -146,11 +192,18 @@ export default function NewInvoicePage() {
           unit_price: parseFloat(p.unit_price),
           quantity: parseFloat(p.quantity),
         })))
+      if (partsError) { alert(partsError.message); return }
+    }
 
-      if (partsError) {
-        alert(partsError.message)
-        return
-      }
+    if (services.length > 0) {
+      const { error: servicesError } = await supabase
+        .from('invoice_services')
+        .insert(services.map(s => ({
+          invoice_id: invoice.id,
+          description: s.description,
+          price: parseFloat(s.price),
+        })))
+      if (servicesError) { alert(servicesError.message); return }
     }
 
     router.push(`/rides/${rideId}/invoices`)
@@ -190,8 +243,6 @@ export default function NewInvoicePage() {
         <div>
           <label className="block mb-3 text-lg font-bold">PARTS</label>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
-
-            {/* ADD form at top */}
             <input type="text" placeholder="Description" value={newPart.description} onChange={(e) => setNewPart({ ...newPart, description: e.target.value })} className={inputClass} />
             <div className="flex gap-3">
               <div className="flex-1">
@@ -212,11 +263,7 @@ export default function NewInvoicePage() {
                 </div>
               </div>
             </div>
-            <button onClick={addPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">
-              + ADD PART
-            </button>
-
-            {/* All added parts in one unified list */}
+            <button onClick={addPart} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PART</button>
             {parts.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {parts.map((part, index) => (
@@ -238,9 +285,7 @@ export default function NewInvoicePage() {
                           </div>
                           <div className="flex-1">
                             <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
-                            <div className={`${smallInputClass} w-full opacity-50`}>
-                              {formatUSD((parseFloat(editingPart.unit_price || '0')) * (parseFloat(editingPart.quantity || '0')))}
-                            </div>
+                            <div className={`${smallInputClass} w-full opacity-50`}>{formatUSD((parseFloat(editingPart.unit_price || '0')) * (parseFloat(editingPart.quantity || '0')))}</div>
                           </div>
                         </div>
                         <div className="flex gap-3">
@@ -275,9 +320,59 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
+        {/* SERVICES SECTION */}
         <div>
-          <label className="block mb-2 text-lg font-bold">ADD SERVICE</label>
-          <button className="w-full bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-2xl text-xl font-bold text-left" onClick={() => alert('Coming soon')}>+ ADD SERVICE</button>
+          <label className="block mb-3 text-lg font-bold">SERVICES</label>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+            <input type="text" placeholder="Description" value={newService.description} onChange={(e) => setNewService({ ...newService, description: e.target.value })} className={inputClass} />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block mb-1 text-sm text-gray-400">PRICE</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <input type="number" min="0" step="0.01" placeholder="0.00" value={newService.price} onChange={(e) => setNewService({ ...newService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                </div>
+              </div>
+            </div>
+            <button onClick={addService} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD SERVICE</button>
+            {services.length > 0 && (
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+                {services.map((svc, index) => (
+                  <div key={index}>
+                    {editingServiceIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <input type="text" placeholder="Description" value={editingService.description} onChange={(e) => setEditingService({ ...editingService, description: e.target.value })} className={inputClass} />
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="block mb-1 text-sm text-gray-400">PRICE</label>
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                              <input type="number" min="0" step="0.01" value={editingService.price} onChange={(e) => setEditingService({ ...editingService, price: e.target.value })} className={`${smallInputClass} w-full pl-8`} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <button onClick={saveEditService} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditService} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-between gap-4 px-4 py-3 ${index < services.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold truncate">{svc.description}</p>
+                          <p className="text-sm text-gray-400">{formatUSD(parseFloat(svc.price))}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditService(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removeService(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
