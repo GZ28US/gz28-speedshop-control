@@ -5,6 +5,13 @@ import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import DatePicker from '@/components/DatePicker'
 import { supabase } from '@/lib/supabase'
+import { formatUSD } from '@/lib/utils'
+
+type Part = {
+  description: string
+  unit_price: string
+  quantity: string
+}
 
 export default function NewInvoicePage() {
   const params = useParams()
@@ -20,6 +27,8 @@ export default function NewInvoicePage() {
   const [service, setService] = useState('')
   const [floridaTaxes, setFloridaTaxes] = useState('')
   const [globalDiscount, setGlobalDiscount] = useState('')
+  const [parts, setParts] = useState<Part[]>([])
+  const [newPart, setNewPart] = useState<Part>({ description: '', unit_price: '', quantity: '1' })
 
   useEffect(() => {
     loadRide()
@@ -67,8 +76,27 @@ export default function NewInvoicePage() {
     return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart
   }
 
+  function addPart() {
+    if (!newPart.description || !newPart.unit_price || !newPart.quantity) {
+      alert('Please fill in all part fields')
+      return
+    }
+    setParts([...parts, newPart])
+    setNewPart({ description: '', unit_price: '', quantity: '1' })
+  }
+
+  function removePart(index: number) {
+    setParts(parts.filter((_, i) => i !== index))
+  }
+
+  function getPartTotal(part: Part) {
+    const price = parseFloat(part.unit_price) || 0
+    const qty = parseFloat(part.quantity) || 0
+    return price * qty
+  }
+
   async function saveInvoice() {
-    const { error } = await supabase
+    const { data: invoice, error } = await supabase
       .from('invoices')
       .insert([{
         invoice_code: invoiceCode,
@@ -80,16 +108,35 @@ export default function NewInvoicePage() {
         florida_taxes: floridaTaxes ? parseFloat(floridaTaxes) : null,
         global_discount: globalDiscount ? parseFloat(globalDiscount) : null,
       }])
+      .select()
+      .single()
 
-    if (error) {
-      alert(error.message)
+    if (error || !invoice) {
+      alert(error?.message || 'Error saving invoice')
       return
+    }
+
+    if (parts.length > 0) {
+      const { error: partsError } = await supabase
+        .from('invoice_parts')
+        .insert(parts.map(p => ({
+          invoice_id: invoice.id,
+          description: p.description,
+          unit_price: parseFloat(p.unit_price),
+          quantity: parseFloat(p.quantity),
+        })))
+
+      if (partsError) {
+        alert(partsError.message)
+        return
+      }
     }
 
     router.push(`/rides/${rideId}/invoices`)
   }
 
   const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
+  const smallInputClass = 'bg-gray-900 border border-gray-700 rounded-2xl px-4 py-3 text-lg'
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -143,14 +190,85 @@ export default function NewInvoicePage() {
           />
         </div>
 
+        {/* PARTS SECTION */}
         <div>
-          <label className="block mb-2 text-lg font-bold">ADD PART</label>
-          <button
-            className="w-full bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-2xl text-xl font-bold text-left"
-            onClick={() => alert('Coming soon')}
-          >
-            + ADD PART
-          </button>
+          <label className="block mb-3 text-lg font-bold">PARTS</label>
+
+          {/* Existing parts */}
+          {parts.length > 0 && (
+            <div className="space-y-3 mb-4">
+              {parts.map((part, index) => (
+                <div key={index} className="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-lg font-bold">{part.description}</p>
+                    <p className="text-gray-400">
+                      {formatUSD(parseFloat(part.unit_price))} × {part.quantity} = {formatUSD(getPartTotal(part))}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removePart(index)}
+                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded-xl font-bold text-sm"
+                  >
+                    REMOVE
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New part inputs */}
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+            <input
+              type="text"
+              placeholder="Description"
+              value={newPart.description}
+              onChange={(e) => setNewPart({ ...newPart, description: e.target.value })}
+              className={`${inputClass}`}
+            />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block mb-1 text-sm text-gray-400">UNIT PRICE</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={newPart.unit_price}
+                    onChange={(e) => setNewPart({ ...newPart, unit_price: e.target.value })}
+                    className={`${smallInputClass} w-full pl-8`}
+                  />
+                </div>
+              </div>
+              <div className="flex-1">
+                <label className="block mb-1 text-sm text-gray-400">QUANTITY</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="1"
+                  value={newPart.quantity}
+                  onChange={(e) => setNewPart({ ...newPart, quantity: e.target.value })}
+                  className={`${smallInputClass} w-full`}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block mb-1 text-sm text-gray-400">TOTAL</label>
+                <div className={`${smallInputClass} w-full opacity-50`}>
+                  {newPart.unit_price && newPart.quantity
+                    ? formatUSD(parseFloat(newPart.unit_price || '0') * parseFloat(newPart.quantity || '0'))
+                    : '$0.00'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={addPart}
+              className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg"
+            >
+              + ADD PART
+            </button>
+          </div>
         </div>
 
         <div>
