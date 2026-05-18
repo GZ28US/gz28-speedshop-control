@@ -6,70 +6,59 @@ import Header from '@/components/Header'
 import DatePicker from '@/components/DatePicker'
 import { supabase } from '@/lib/supabase'
 
-const expenseTypes = ['DAILY', 'WEEKLY', 'MONTHLY', 'SINGLE']
-const expenseSources = ['Regions', 'Cash', 'GZ28BR', 'Humberto']
-
-function getTodayString() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-export default function NewExpensePage() {
+export default function NewSeasonPage() {
   const params = useParams()
   const router = useRouter()
   const staffId = String(params.id)
-  const seasonID = String(params.seasonID)
 
-  const [seasonCode, setSeasonCode] = useState('')
   const [staffName, setStaffName] = useState('')
-  const [type, setType] = useState('SINGLE')
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [source, setSource] = useState('Regions')
-  const [expenseDate, setExpenseDate] = useState(getTodayString())
+  const [dateEntry, setDateEntry] = useState('')
+  const [dateConclusion, setDateConclusion] = useState('')
 
   useEffect(() => {
-    loadInfo()
+    loadStaffName()
   }, [])
 
-  async function loadInfo() {
-    const { data: season } = await supabase
-      .from('seasons')
-      .select('season_code, staff_id')
-      .eq('id', seasonID)
+  async function loadStaffName() {
+    const { data } = await supabase
+      .from('staff')
+      .select('name')
+      .eq('id', staffId)
       .single()
 
-    if (season) {
-      setSeasonCode(season.season_code)
+    setStaffName(data?.name || '')
+  }
 
-      const { data: staff } = await supabase
-        .from('staff')
-        .select('name')
-        .eq('id', season.staff_id)
-        .single()
+  async function renumberSeasons() {
+    const { data } = await supabase
+      .from('seasons')
+      .select('id, date_entry')
+      .eq('staff_id', staffId)
+      .order('date_entry', { ascending: true })
 
-      setStaffName(staff?.name || '')
+    if (!data) return
+
+    for (let i = 0; i < data.length; i++) {
+      const code = `US.${String(i + 1).padStart(3, '0')}`
+      await supabase
+        .from('seasons')
+        .update({ season_code: code })
+        .eq('id', data[i].id)
     }
   }
 
-  async function saveExpense() {
-    if (!amount) {
-      alert('Please enter an amount')
-      return
-    }
+  function isValidDate(d: string) {
+    return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null
+  }
 
+  async function saveSeason() {
     const { error } = await supabase
-      .from('expenses')
+      .from('seasons')
       .insert([{
-        season_id: seasonID,
-        type,
-        description: description || null,
-        amount: parseFloat(amount),
-        source,
-        expense_date: type === 'SINGLE' ? expenseDate : null,
+        season_code: 'TMP',
+        staff_id: staffId,
+        date_entry: isValidDate(dateEntry) ? dateEntry : null,
+        date_conclusion: isValidDate(dateConclusion) ? dateConclusion : null,
       }])
 
     if (error) {
@@ -77,90 +66,39 @@ export default function NewExpensePage() {
       return
     }
 
-    router.push(`/staff/${staffId}/seasons/${seasonID}/expenses`)
+    await renumberSeasons()
+    router.push(`/staff/${staffId}/seasons`)
   }
-
-  const selectClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
-  const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
 
-      <h1 className="text-4xl font-bold mb-2">ADD NEW EXPENSE</h1>
-      <p className="text-gray-400 text-xl mb-8">{staffName} — {seasonCode}</p>
+      <h1 className="text-4xl font-bold mb-2">ADD NEW SEASON</h1>
+      <p className="text-gray-400 text-xl mb-8">{staffName}</p>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">TYPE</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className={selectClass}
-          >
-            {expenseTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+        <DatePicker
+          label="DATE OF ENTRY"
+          value={dateEntry}
+          onChange={setDateEntry}
+        />
 
-        {type === 'SINGLE' && (
-          <DatePicker
-            label="DATE"
-            value={expenseDate}
-            onChange={setExpenseDate}
-          />
-        )}
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">DESCRIPTION</label>
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className={inputClass}
-            placeholder="Optional description"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">AMOUNT (USD)</label>
-          <div className="relative">
-            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-xl text-gray-400">$</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className={`${inputClass} pl-10`}
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">SOURCE</label>
-          <select
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className={selectClass}
-          >
-            {expenseSources.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
+        <DatePicker
+          label="DATE OF CONCLUSION"
+          value={dateConclusion}
+          onChange={setDateConclusion}
+        />
 
         <button
-          onClick={saveExpense}
+          onClick={saveSeason}
           className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold"
         >
-          SAVE EXPENSE
+          SAVE SEASON
         </button>
 
-        <a href={`/staff/${staffId}/seasons/${seasonID}/expenses`} className="text-gray-400 text-xl">Cancel</a>
+        <a href={`/staff/${staffId}/seasons`} className="text-gray-400 text-xl">Cancel</a>
       </div>
     </main>
   )

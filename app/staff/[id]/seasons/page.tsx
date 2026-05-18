@@ -78,7 +78,7 @@ export default function SeasonsPage() {
       .from('seasons')
       .select('*')
       .eq('staff_id', staffId)
-      .order('season_code', { ascending: true })
+      .order('date_entry', { ascending: false })
 
     setSeasons(seasonData || [])
 

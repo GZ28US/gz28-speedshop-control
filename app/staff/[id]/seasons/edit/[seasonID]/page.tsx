@@ -14,7 +14,6 @@ export default function EditSeasonPage() {
 
   const [loading, setLoading] = useState(true)
   const [staffName, setStaffName] = useState('')
-  const [seasonCode, setSeasonCode] = useState('')
   const [dateEntry, setDateEntry] = useState('')
   const [dateConclusion, setDateConclusion] = useState('')
 
@@ -46,10 +45,27 @@ export default function EditSeasonPage() {
       return
     }
 
-    setSeasonCode(data.season_code || '')
     setDateEntry(data.date_entry || '')
     setDateConclusion(data.date_conclusion || '')
     setLoading(false)
+  }
+
+  async function renumberSeasons() {
+    const { data } = await supabase
+      .from('seasons')
+      .select('id, date_entry')
+      .eq('staff_id', staffId)
+      .order('date_entry', { ascending: true })
+
+    if (!data) return
+
+    for (let i = 0; i < data.length; i++) {
+      const code = `US.${String(i + 1).padStart(3, '0')}`
+      await supabase
+        .from('seasons')
+        .update({ season_code: code })
+        .eq('id', data[i].id)
+    }
   }
 
   function isValidDate(d: string) {
@@ -60,7 +76,6 @@ export default function EditSeasonPage() {
     const { error } = await supabase
       .from('seasons')
       .update({
-        season_code: seasonCode,
         date_entry: isValidDate(dateEntry) ? dateEntry : null,
         date_conclusion: isValidDate(dateConclusion) ? dateConclusion : null,
         updated_at: new Date().toISOString(),
@@ -72,10 +87,9 @@ export default function EditSeasonPage() {
       return
     }
 
+    await renumberSeasons()
     router.push(`/staff/${staffId}/seasons`)
   }
-
-  const inputClass = 'w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-xl'
 
   if (loading) {
     return (
@@ -94,15 +108,6 @@ export default function EditSeasonPage() {
       <p className="text-gray-400 text-xl mb-8">{staffName}</p>
 
       <div className="grid grid-cols-1 gap-5 max-w-2xl">
-
-        <div>
-          <label className="block mb-2 text-lg font-bold">SEASON CODE</label>
-          <input
-            value={seasonCode}
-            onChange={(e) => setSeasonCode(e.target.value)}
-            className={inputClass}
-          />
-        </div>
 
         <DatePicker
           label="DATE OF ENTRY"
