@@ -47,14 +47,18 @@ export default function NewSeasonPage() {
     setSeasonCode(`US.${String(nextNumber).padStart(3, '0')}`)
   }
 
+  function isValidDate(d: string) {
+    return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null
+  }
+
   async function saveSeason() {
     const { error } = await supabase
       .from('seasons')
       .insert([{
         season_code: seasonCode,
         staff_id: staffId,
-        date_entry: dateEntry || null,
-        date_conclusion: dateConclusion || null,
+        date_entry: isValidDate(dateEntry) ? dateEntry : null,
+        date_conclusion: isValidDate(dateConclusion) ? dateConclusion : null,
       }])
 
     if (error) {

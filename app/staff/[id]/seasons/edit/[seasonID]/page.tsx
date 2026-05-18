@@ -10,7 +10,7 @@ export default function EditSeasonPage() {
   const params = useParams()
   const router = useRouter()
   const staffId = String(params.id)
-  const seasonId = String(params.seasonID)
+  const seasonID = String(params.seasonID)
 
   const [loading, setLoading] = useState(true)
   const [staffName, setStaffName] = useState('')
@@ -37,7 +37,7 @@ export default function EditSeasonPage() {
     const { data, error } = await supabase
       .from('seasons')
       .select('*')
-      .eq('id', seasonId)
+      .eq('id', seasonID)
       .single()
 
     if (error || !data) {
@@ -52,16 +52,20 @@ export default function EditSeasonPage() {
     setLoading(false)
   }
 
+  function isValidDate(d: string) {
+    return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null
+  }
+
   async function saveSeason() {
     const { error } = await supabase
       .from('seasons')
       .update({
         season_code: seasonCode,
-        date_entry: dateEntry || null,
-        date_conclusion: dateConclusion || null,
+        date_entry: isValidDate(dateEntry) ? dateEntry : null,
+        date_conclusion: isValidDate(dateConclusion) ? dateConclusion : null,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', seasonId)
+      .eq('id', seasonID)
 
     if (error) {
       alert(error.message)
