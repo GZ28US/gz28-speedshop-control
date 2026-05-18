@@ -17,6 +17,7 @@ export default function EditInvoicePage() {
   const [projectName, setProjectName] = useState('')
   const [invoiceCode, setInvoiceCode] = useState('')
   const [entryDate, setEntryDate] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
   const [mileage, setMileage] = useState('')
   const [service, setService] = useState('')
   const [floridaTaxes, setFloridaTaxes] = useState('')
@@ -55,6 +56,7 @@ export default function EditInvoicePage() {
 
     setInvoiceCode(data.invoice_code || '')
     setEntryDate(data.entry_date || '')
+    setDeliveryDate(data.delivery_date || '')
     setMileage(data.mileage ? Number(data.mileage).toLocaleString('en-US') : '')
     setService(data.service || '')
     setFloridaTaxes(data.florida_taxes ? String(data.florida_taxes) : '')
@@ -78,6 +80,7 @@ export default function EditInvoicePage() {
       .from('invoices')
       .update({
         entry_date: isValidDate(entryDate) ? entryDate : null,
+        delivery_date: isValidDate(deliveryDate) ? deliveryDate : null,
         mileage: mileage ? parseFloat(mileage.replace(/,/g, '')) : null,
         service: service || null,
         florida_taxes: floridaTaxes ? parseFloat(floridaTaxes) : null,
@@ -127,6 +130,12 @@ export default function EditInvoicePage() {
           label="ENTRY DATE"
           value={entryDate}
           onChange={setEntryDate}
+        />
+
+        <DatePicker
+          label="DELIVERY DATE"
+          value={deliveryDate}
+          onChange={setDeliveryDate}
         />
 
         <div>
