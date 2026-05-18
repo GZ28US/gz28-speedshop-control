@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { formatUSD } from '@/lib/utils'
 
 type Season = {
   id: string
@@ -13,9 +14,38 @@ type Season = {
   date_conclusion: string | null
 }
 
+type Expense = {
+  id: string
+  season_id: string
+  type: string
+  amount: number
+  expense_date: string | null
+}
+
 type StaffMember = {
   id: string
   name: string
+}
+
+function calculateSeasonTotal(expenses: Expense[], season: Season): number {
+  const start = season.date_entry ? new Date(season.date_entry + 'T00:00:00') : null
+  const end = season.date_conclusion
+    ? new Date(season.date_conclusion + 'T00:00:00')
+    : new Date()
+
+  return expenses
+    .filter(e => e.season_id === season.id)
+    .reduce((sum, e) => {
+      const amount = Number(e.amount)
+      if (e.type === 'SINGLE') return sum + amount
+      if (!start) return sum
+      const diffMs = end.getTime() - start.getTime()
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+      if (e.type === 'DAILY') return sum + amount * diffDays
+      if (e.type === 'WEEKLY') return sum + amount * Math.floor(diffDays / 7)
+      if (e.type === 'MONTHLY') return sum + amount * Math.floor(diffDays / 30)
+      return sum
+    }, 0)
 }
 
 export default function SeasonsPage() {
@@ -24,6 +54,7 @@ export default function SeasonsPage() {
 
   const [staff, setStaff] = useState<StaffMember | null>(null)
   const [seasons, setSeasons] = useState<Season[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
@@ -43,13 +74,24 @@ export default function SeasonsPage() {
   }
 
   async function loadSeasons() {
-    const { data } = await supabase
+    const { data: seasonData } = await supabase
       .from('seasons')
       .select('*')
       .eq('staff_id', staffId)
       .order('season_code', { ascending: true })
 
-    setSeasons(data || [])
+    setSeasons(seasonData || [])
+
+    if (seasonData && seasonData.length > 0) {
+      const seasonIds = seasonData.map(s => s.id)
+      const { data: expenseData } = await supabase
+        .from('expenses')
+        .select('id, season_id, type, amount, expense_date')
+        .in('season_id', seasonIds)
+
+      setExpenses(expenseData || [])
+    }
+
     setLoading(false)
   }
 
@@ -131,41 +173,52 @@ export default function SeasonsPage() {
         <p className="text-2xl text-gray-400">No seasons yet.</p>
       ) : (
         <div className="space-y-5">
-          {seasons.map((season) => (
-            <div
-              key={season.id}
-              className="bg-gray-900 border border-gray-800 rounded-3xl p-6 flex items-center justify-between"
-            >
-              <div>
-                <h2 className="text-2xl font-bold">{season.season_code}</h2>
-                <p className="text-lg text-gray-400">Entry: {formatDate(season.date_entry)}</p>
-                <p className="text-lg text-gray-400">Conclusion: {formatDate(season.date_conclusion)}</p>
+          {seasons.map((season) => {
+            const total = calculateSeasonTotal(expenses, season)
+            const isConcluded = !!season.date_conclusion
+            const totalLabel = isConcluded ? 'FINAL EXPENSES TOTAL' : 'ACTUAL EXPENSES TOTAL'
+
+            return (
+              <div
+                key={season.id}
+                className="bg-gray-900 border border-gray-800 rounded-3xl p-6 flex items-center justify-between gap-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-bold">{season.season_code}</h2>
+                  <p className="text-lg text-gray-400">Entry: {formatDate(season.date_entry)}</p>
+                  <p className="text-lg text-gray-400">Conclusion: {formatDate(season.date_conclusion)}</p>
+                </div>
+
+                <div className="bg-red-700 rounded-2xl px-6 py-4 text-center">
+                  <p className="text-sm font-bold">{totalLabel}</p>
+                  <p className="text-3xl font-bold">{formatUSD(total)}</p>
+                </div>
+
+                <div className="flex gap-3 flex-wrap">
+                  <Link
+                    href={`/staff/${staffId}/seasons/${season.id}/expenses`}
+                    className="bg-gray-700 hover:bg-gray-600 px-5 py-3 rounded-2xl font-bold"
+                  >
+                    EXPENSES
+                  </Link>
+
+                  <Link
+                    href={`/staff/${staffId}/seasons/edit/${season.id}`}
+                    className="bg-blue-700 hover:bg-blue-600 px-5 py-3 rounded-2xl font-bold"
+                  >
+                    EDIT
+                  </Link>
+
+                  <button
+                    onClick={() => setConfirmId(season.id)}
+                    className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
+                  >
+                    REMOVE
+                  </button>
+                </div>
               </div>
-
-              <div className="flex gap-3 flex-wrap">
-                <Link
-                  href={`/staff/${staffId}/seasons/${season.id}/expenses`}
-                  className="bg-gray-700 hover:bg-gray-600 px-5 py-3 rounded-2xl font-bold"
-                >
-                  EXPENSES
-                </Link>
-
-                <Link
-                  href={`/staff/${staffId}/seasons/edit/${season.id}`}
-                  className="bg-blue-700 hover:bg-blue-600 px-5 py-3 rounded-2xl font-bold"
-                >
-                  EDIT
-                </Link>
-
-                <button
-                  onClick={() => setConfirmId(season.id)}
-                  className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
-                >
-                  REMOVE
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </main>

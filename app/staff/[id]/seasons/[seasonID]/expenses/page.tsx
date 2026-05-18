@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { formatUSD } from '@/lib/utils'
 
 type Expense = {
   id: string
@@ -146,6 +147,9 @@ export default function ExpensesPage() {
     ? expenses.reduce((sum, e) => sum + calculateRunningTotal(e, season), 0)
     : 0
 
+  const isConcluded = !!season?.date_conclusion
+  const totalLabel = isConcluded ? 'FINAL EXPENSES TOTAL' : 'ACTUAL EXPENSES TOTAL'
+
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
@@ -199,9 +203,9 @@ export default function ExpensesPage() {
 
       {expenses.length > 0 && (
         <div className="bg-red-700 rounded-3xl p-6 mb-8 max-w-sm">
-          <p className="text-xl font-bold">TOTAL EXPENSES</p>
-          <p className="text-5xl font-bold">${grandTotal.toFixed(2)}</p>
-          {!season?.date_conclusion && (
+          <p className="text-xl font-bold">{totalLabel}</p>
+          <p className="text-5xl font-bold">{formatUSD(grandTotal)}</p>
+          {!isConcluded && (
             <p className="text-sm mt-2 opacity-80">Running — updated daily until conclusion</p>
           )}
         </div>
@@ -220,14 +224,14 @@ export default function ExpensesPage() {
             >
               <div>
                 {expense.type === 'SINGLE' ? (
-                  <h2 className="text-2xl font-bold">${Number(expense.amount).toFixed(2)}</h2>
+                  <h2 className="text-2xl font-bold">{formatUSD(Number(expense.amount))}</h2>
                 ) : (
                   <>
                     <h2 className="text-2xl font-bold">
-                      ${season ? calculateRunningTotal(expense, season).toFixed(2) : '0.00'}
+                      {season ? formatUSD(calculateRunningTotal(expense, season)) : 'USD 0.00'}
                     </h2>
                     <p className="text-lg text-gray-400">
-                      ${Number(expense.amount).toFixed(2)} / {expense.type.toLowerCase()} × {season ? formatRunningLabel(expense, season) : ''}
+                      {formatUSD(Number(expense.amount))} / {expense.type.toLowerCase()} × {season ? formatRunningLabel(expense, season) : ''}
                     </p>
                   </>
                 )}
