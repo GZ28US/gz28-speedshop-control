@@ -14,10 +14,10 @@ export const manufacturersByYear: Record<number, string[]> = {
   1994: ['MOPAR'],
   1995: ['MOPAR'],
   2009: ['MOPAR'],
-  2010: ['MOPAR'],
-  2011: ['MOPAR'],
-  2012: ['MOPAR'],
-  2013: ['MOPAR'],
+  2010: ['GM'],
+  2011: ['GM'],
+  2012: ['GM'],
+  2013: ['GM'],
   2014: ['GM'],
   2015: ['MOPAR', 'GM'],
   2016: ['MOPAR', 'GM'],
@@ -37,12 +37,12 @@ export const brandsByManufacturerAndYear: Record<string, Record<number, string[]
   MOPAR: {
     1968: ['DODGE'], 1969: ['DODGE'], 1970: ['DODGE'],
     1992: ['DODGE'], 1993: ['DODGE'], 1994: ['DODGE'], 1995: ['DODGE'],
-    2009: ['RAM'], 2010: ['RAM'], 2011: ['RAM'], 2012: ['RAM'], 2013: ['RAM'],
-    2014: ['RAM'], 2015: ['RAM'], 2016: ['RAM'], 2017: ['RAM'], 2018: ['DODGE', 'RAM'],
+    2009: ['RAM'], 2015: ['RAM'], 2016: ['RAM'], 2017: ['RAM'], 2018: ['DODGE', 'RAM'],
     2019: ['DODGE'], 2020: ['DODGE'], 2021: ['DODGE'], 2022: ['DODGE'], 2023: ['DODGE'],
     2024: ['DODGE'], 2025: ['DODGE'], 2026: ['DODGE'],
   },
   GM: {
+    2010: ['CHEVROLET'], 2011: ['CHEVROLET'], 2012: ['CHEVROLET'], 2013: ['CHEVROLET'],
     2014: ['CHEVROLET'], 2015: ['CHEVROLET'], 2016: ['CHEVROLET'], 2017: ['CHEVROLET'],
     2018: ['CHEVROLET'], 2019: ['CHEVROLET'], 2020: ['CHEVROLET'], 2021: ['CHEVROLET'],
     2022: ['CHEVROLET'], 2023: ['CHEVROLET'], 2024: ['CHEVROLET'], 2025: ['CHEVROLET'], 2026: ['CHEVROLET'],
@@ -56,9 +56,7 @@ export const brandsByManufacturerAndYear: Record<string, Record<number, string[]
 
 export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
   DODGE: {
-    1968: ['CHARGER'],
-    1969: ['CHARGER'],
-    1970: ['CHARGER'],
+    1968: ['CHARGER'], 1969: ['CHARGER'], 1970: ['CHARGER'],
     1992: ['VIPER'], 1993: ['VIPER'], 1994: ['VIPER'], 1995: ['VIPER'],
     2018: ['CHALLENGER', 'CHARGER'],
     2019: ['CHALLENGER', 'CHARGER'],
@@ -71,11 +69,12 @@ export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
     2026: ['DURANGO'],
   },
   RAM: {
-    2009: ['1500'], 2010: ['1500'], 2011: ['1500'], 2012: ['1500'], 2013: ['1500'],
-    2014: ['1500'], 2015: ['1500'], 2016: ['1500'], 2017: ['1500'], 2018: ['1500'],
+    2009: ['1500'], 2015: ['1500'], 2016: ['1500'], 2017: ['1500'], 2018: ['1500'],
   },
   CHEVROLET: {
-    2014: ['CORVETTE'], 2015: ['CORVETTE'], 2016: ['CAMARO', 'CORVETTE'], 2017: ['CAMARO', 'CORVETTE'],
+    2010: ['CAMARO'], 2011: ['CAMARO'], 2012: ['CAMARO'], 2013: ['CAMARO'],
+    2014: ['CAMARO', 'CORVETTE'], 2015: ['CAMARO', 'CORVETTE'],
+    2016: ['CAMARO', 'CORVETTE'], 2017: ['CAMARO', 'CORVETTE'],
     2018: ['CAMARO', 'CORVETTE'], 2019: ['CAMARO', 'CORVETTE'], 2020: ['CAMARO', 'CORVETTE'],
     2021: ['CAMARO', 'CORVETTE'], 2022: ['CAMARO', 'CORVETTE'], 2023: ['CAMARO', 'CORVETTE'],
     2024: ['CAMARO', 'CORVETTE'], 2025: ['CORVETTE'], 2026: ['CORVETTE'],
@@ -101,10 +100,7 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2024: ['R/T 5.7', 'ScatPack 6.4', 'ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
   },
   VIPER: {
-    1992: ['RT/10 8.0 V10'],
-    1993: ['RT/10 8.0 V10'],
-    1994: ['RT/10 8.0 V10'],
-    1995: ['RT/10 8.0 V10'],
+    1992: ['RT/10 8.0 V10'], 1993: ['RT/10 8.0 V10'], 1994: ['RT/10 8.0 V10'], 1995: ['RT/10 8.0 V10'],
   },
   CHALLENGER: {
     2018: ['R/T 5.7', 'R/T ScatPack 6.4', 'SRT 392 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT Demon 6.2'],
@@ -116,13 +112,16 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2024: ['R/T 5.7', 'R/T ScatPack 6.4', 'R/T ScatPack WideBody 6.4', 'SRT HellCat 6.2', 'SRT HellCat WideBody 6.2', 'SRT HellCat RedEye 6.2', 'SRT HellCat RedEye WideBody 6.2'],
   },
   DURANGO: {
-    2021: ['SRT HellCat 6.2'],
-    2023: ['SRT HellCat 6.2'],
-    2024: ['SRT HellCat 6.2'],
-    2025: ['SRT HellCat 6.2'],
-    2026: ['SRT HellCat 6.2'],
+    2021: ['SRT HellCat 6.2'], 2023: ['SRT HellCat 6.2'], 2024: ['SRT HellCat 6.2'],
+    2025: ['SRT HellCat 6.2'], 2026: ['SRT HellCat 6.2'],
   },
   CAMARO: {
+    2010: ['SS 6.2', 'SS 1LE 6.2'],
+    2011: ['SS 6.2', 'SS 1LE 6.2'],
+    2012: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2 SC'],
+    2013: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2 SC'],
+    2014: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2 SC', 'Z/28 7.0'],
+    2015: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2 SC', 'Z/28 7.0'],
     2016: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2'],
     2017: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
     2018: ['SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2'],
@@ -134,23 +133,17 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2024: ['LT1 6.2', 'SS 6.2', 'SS 1LE 6.2', 'ZL1 6.2', 'ZL1 1LE 6.2', 'Panther Collector Edition LT1 6.2', 'Panther Collector Edition SS 6.2', 'Panther Collector Edition ZL1 6.2'],
   },
   CORVETTE: {
-    2014: ['Stingray 6.2'],
-    2015: ['Stingray 6.2', 'Z06 6.2'],
-    2016: ['Stingray 6.2', 'Z06 6.2'],
-    2017: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'],
-    2018: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'],
-    2019: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2', 'ZR1 6.2'],
-    2020: ['Stingray 6.2'],
-    2021: ['Stingray 6.2'],
-    2022: ['Stingray 6.2'],
+    2014: ['Stingray 6.2'], 2015: ['Stingray 6.2', 'Z06 6.2'], 2016: ['Stingray 6.2', 'Z06 6.2'],
+    2017: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'], 2018: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2'],
+    2019: ['Stingray 6.2', 'Grand Sport 6.2', 'Z06 6.2', 'ZR1 6.2'], 2020: ['Stingray 6.2'],
+    2021: ['Stingray 6.2'], 2022: ['Stingray 6.2'],
     2023: ['Stingray 6.2', 'Z06 5.5', '70th Anniversary Stingray 6.2', '70th Anniversary Z06 5.5'],
     2024: ['Stingray 6.2', 'Z06 5.5', 'E-Ray 6.2'],
     2025: ['Stingray 6.2', 'Z06 5.5', 'E-Ray 6.2', 'ZR1 5.5TT'],
     2026: ['Stingray 6.2', 'Z06 5.5', 'E-Ray 6.2', 'ZR1 5.5TT'],
   },
   '1500': {
-    2009: ['1500 5.7'], 2010: ['1500 5.7'], 2011: ['1500 5.7'], 2012: ['1500 5.7'], 2013: ['1500 5.7'],
-    2014: ['1500 5.7'], 2015: ['1500 5.7', '1500 Rebel 5.7'], 2016: ['1500 5.7', '1500 Rebel 5.7'],
+    2009: ['1500 5.7'], 2015: ['1500 5.7', '1500 Rebel 5.7'], 2016: ['1500 5.7', '1500 Rebel 5.7'],
     2017: ['1500 5.7', '1500 Rebel 5.7'], 2018: ['1500 5.7', '1500 Rebel 5.7'],
   },
   F150: {
@@ -168,6 +161,20 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
 }
 
 export const specialEditions: Record<string, string[]> = {
+  // Gen 5 Camaro special editions
+  '2010-CAMARO-SS 6.2': ['None', 'Synergy Green Edition', 'Transformers Edition', 'Indy Pace Car Edition'],
+  '2010-CAMARO-SS 1LE 6.2': ['None', 'Synergy Green Edition', 'Transformers Edition', 'Indy Pace Car Edition'],
+  '2011-CAMARO-SS 6.2': ['None', 'Neiman Marcus Edition', 'Synergy Series'],
+  '2011-CAMARO-SS 1LE 6.2': ['None', 'Synergy Series'],
+  '2012-CAMARO-SS 6.2': ['None', '45th Anniversary Edition', 'Transformers Edition', 'Honor and Valor Edition'],
+  '2012-CAMARO-SS 1LE 6.2': ['None', '45th Anniversary Edition'],
+  '2012-CAMARO-ZL1 6.2 SC': ['None', '45th Anniversary Edition'],
+  '2013-CAMARO-SS 6.2': ['None', 'Dusk Edition', 'Hot Wheels Edition'],
+  '2013-CAMARO-SS 1LE 6.2': ['None', 'Hot Wheels Edition'],
+  '2014-CAMARO-SS 6.2': ['None', 'Spring Edition'],
+  '2015-CAMARO-SS 6.2': ['None', 'Green Flash Edition', 'Commemorative Edition'],
+  '2015-CAMARO-SS 1LE 6.2': ['None', 'Green Flash Edition'],
+  // Challenger special editions
   '2019-CHALLENGER-R/T ScatPack 6.4': ['None', '1320'],
   '2023-CHALLENGER-R/T ScatPack 6.4': ['None', 'Swinger', 'Shakedown', 'Mopar Edition', 'T/A', 'Shaker'],
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4': ['None', 'Swinger', 'Shakedown', 'Mopar Edition', 'T/A', 'Shaker'],
@@ -185,7 +192,6 @@ export const specialEditions: Record<string, string[]> = {
 
 const moparColors = ['B5 Blue', 'Destroyer Gray', 'F8 Green', 'Frostbite', 'Go Mango', 'Granite', 'Octane Red', 'Pitch Black', 'Plum Crazy', 'Sinamon Stick', 'Sublime', 'TorRed', 'Triple Nickel', 'White Knuckle']
 const ramColors = ['Black', 'Bright White', 'Brilliant Black Crystal', 'Bright Silver Metallic', 'Deep Cherry Red Crystal', 'Maximum Steel Metallic', 'Granite Crystal Metallic', 'True Blue Pearl', 'Western Brown', 'Flame Red']
-const camaroColors = ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Rapid Blue', 'Shadow Gray', 'Sharkskin', 'Vivid Orange', 'Wild Cherry', 'Radiant Red', 'Panther Matte Black']
 const fordColors = ['Agate Black', 'Oxford White', 'Star White', 'Rapid Red', 'Antimatter Blue', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver', 'Velocity Blue', 'Lead Foot', 'Magma Red', 'Shadow Black']
 const durangoColors = ['Billet Silver', 'DB Black', 'Destroyer Gray', 'F8 Green', 'Granite Crystal', 'In-Violet', 'Octane Red', 'Reactor Blue', 'Redline', 'Vice White', 'White Knuckle']
 const durangoColors2026 = ['Destroyer Gray', 'Diamond Black', 'Octane Red', 'Vapor Gray', 'White Knuckle']
@@ -205,6 +211,38 @@ const classicChargerColorsByYear: Record<number, string[]> = {
   1970: ['Black', 'White', 'Silver', 'B5 Blue', 'Dark Blue', 'F8 Green', 'Go Mango', 'Sublime', 'Plum Crazy', 'Hemi Orange', 'Banana', 'Green Go', 'Panther Pink', 'Butterscotch', 'Bronze', 'Rallye Red', 'Dark Tan'],
 }
 
+const gen5CamaroColorsByYear: Record<number, string[]> = {
+  2010: ['Black', 'Silver Ice', 'Inferno Orange', 'Victory Red', 'Rally Yellow', 'Cyber Gray', 'Red Jewel', 'Imperial Blue', 'Aqua Blue', 'Synergy Green'],
+  2011: ['Black', 'Silver Ice', 'Victory Red', 'Rally Yellow', 'Inferno Orange', 'Imperial Blue', 'Cyber Gray', 'Red Jewel', 'Aqua Blue', 'Synergy Green', 'Summit White'],
+  2012: ['Black', 'Victory Red', 'Summit White', 'Silver Ice', 'Rally Yellow', 'Carbon Flash', 'Inferno Orange', 'Imperial Blue', 'Ashen Gray', 'Crystal Red'],
+  2013: ['Black', 'Victory Red', 'Summit White', 'Silver Ice', 'Rally Yellow', 'Inferno Orange', 'Imperial Blue', 'Ashen Gray', 'Crystal Red', 'Blue Ray'],
+  2014: ['Black', 'Victory Red', 'Summit White', 'Silver Ice', 'Rally Yellow', 'Inferno Orange', 'Blue Ray', 'Ashen Gray', 'Crystal Red', 'Reddish Orange'],
+  2015: ['Black', 'Victory Red', 'Summit White', 'Silver Ice', 'Rally Yellow', 'Inferno Orange', 'Blue Ray', 'Ashen Gray', 'Crystal Red', 'Blue Velvet', 'Emerald Green'],
+}
+
+const gen5CamaroSpecialEditionColors: Record<string, string[]> = {
+  '2010-CAMARO-SS 6.2-Synergy Green Edition': ['Synergy Green'],
+  '2010-CAMARO-SS 1LE 6.2-Synergy Green Edition': ['Synergy Green'],
+  '2010-CAMARO-SS 6.2-Transformers Edition': ['Rally Yellow'],
+  '2010-CAMARO-SS 1LE 6.2-Transformers Edition': ['Rally Yellow'],
+  '2010-CAMARO-SS 6.2-Indy Pace Car Edition': ['Silver Ice', 'Inferno Orange'],
+  '2011-CAMARO-SS 6.2-Neiman Marcus Edition': ['Deep Bordeaux'],
+  '2011-CAMARO-SS 6.2-Synergy Series': ['Summit White', 'Black', 'Victory Red'],
+  '2011-CAMARO-SS 1LE 6.2-Synergy Series': ['Summit White', 'Black', 'Victory Red'],
+  '2012-CAMARO-SS 6.2-45th Anniversary Edition': ['Carbon Flash'],
+  '2012-CAMARO-SS 1LE 6.2-45th Anniversary Edition': ['Carbon Flash'],
+  '2012-CAMARO-ZL1 6.2 SC-45th Anniversary Edition': ['Carbon Flash'],
+  '2012-CAMARO-SS 6.2-Transformers Edition': ['Rally Yellow'],
+  '2012-CAMARO-SS 6.2-Honor and Valor Edition': ['Summit White', 'Black'],
+  '2013-CAMARO-SS 6.2-Dusk Edition': ['Black'],
+  '2013-CAMARO-SS 6.2-Hot Wheels Edition': ['Rally Yellow'],
+  '2013-CAMARO-SS 1LE 6.2-Hot Wheels Edition': ['Rally Yellow'],
+  '2014-CAMARO-SS 6.2-Spring Edition': ['Summit White'],
+  '2015-CAMARO-SS 6.2-Green Flash Edition': ['Emerald Green'],
+  '2015-CAMARO-SS 1LE 6.2-Green Flash Edition': ['Emerald Green'],
+  '2015-CAMARO-SS 6.2-Commemorative Edition': ['Rally Yellow', 'Black'],
+}
+
 const corvetteColorsByYear: Record<number, string[]> = {
   2014: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Cyber Gray', 'Laguna Blue', 'Lime Rock Green', 'Night Race Blue', 'Torch Red', 'Velocity Yellow'],
   2015: ['Arctic White', 'Black', 'Blade Silver', 'Crystal Red', 'Daytona Sunrise Orange', 'Laguna Blue', 'Night Race Blue', 'Shark Gray', 'Torch Red', 'Velocity Yellow'],
@@ -221,7 +259,20 @@ const corvetteColorsByYear: Record<number, string[]> = {
   2026: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Competition Yellow', 'Hysteria Purple', 'Rapid Blue', 'Red Mist', 'Riptide Blue', 'Roswell Green', 'Sebring Orange', 'Torch Red'],
 }
 
+const gen6CamaroColorsByYear: Record<number, string[]> = {
+  2016: ['Black', 'Summit White', 'Red Hot', 'Hyper Blue', 'Nightfall Gray', 'Mosaic Black', 'Bright Yellow', 'Garnet Red'],
+  2017: ['Black', 'Summit White', 'Red Hot', 'Hyper Blue', 'Nightfall Gray', 'Mosaic Black', 'Bright Yellow', 'Garnet Red', 'Shock'],
+  2018: ['Black', 'Summit White', 'Red Hot', 'Hyper Blue', 'Nightfall Gray', 'Mosaic Black', 'Bright Yellow', 'Garnet Red', 'Shock', 'Crush'],
+  2019: ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Nightfall Gray', 'Mosaic Black', 'Shock', 'Crush', 'Garnet Red'],
+  2020: ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Nightfall Gray', 'Mosaic Black', 'Shock', 'Crush', 'Wild Cherry'],
+  2021: ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Nightfall Gray', 'Rapid Blue', 'Shock', 'Wild Cherry'],
+  2022: ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Nightfall Gray', 'Rapid Blue', 'Shock', 'Wild Cherry', 'Radiant Red'],
+  2023: ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Nightfall Gray', 'Rapid Blue', 'Shock', 'Wild Cherry', 'Radiant Red'],
+  2024: ['Black', 'Summit White', 'Red Hot', 'Riverside Blue', 'Nightfall Gray', 'Rapid Blue', 'Vivid Orange', 'Wild Cherry', 'Radiant Red', 'Panther Black', 'Panther Matte Black'],
+}
+
 const colorsByConfiguration: Record<string, string[]> = {
+  ...gen5CamaroSpecialEditionColors,
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
   '2023-CHARGER-SRT HellCat RedEye 6.2-King Daytona': ['Go Mango'],
@@ -243,13 +294,14 @@ const colorsByConfiguration: Record<string, string[]> = {
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
   const key = `${year}-${model}-${version}-${specialEdition}`
   if (colorsByConfiguration[key]) return colorsByConfiguration[key]
+  if (model === 'CAMARO' && gen5CamaroColorsByYear[year]) return gen5CamaroColorsByYear[year]
+  if (model === 'CAMARO' && gen6CamaroColorsByYear[year]) return gen6CamaroColorsByYear[year]
   if (model === 'CHARGER' && classicChargerColorsByYear[year]) return classicChargerColorsByYear[year]
   if (model === 'VIPER' && viperColorsByYear[year]) return viperColorsByYear[year]
   if (model === 'CORVETTE' && corvetteColorsByYear[year]) return corvetteColorsByYear[year]
   if (model === 'DURANGO' && year === 2026) return durangoColors2026
   if (model === 'DURANGO') return durangoColors
   if (brand === 'RAM') return ramColors
-  if (model === 'CAMARO') return camaroColors
   if (brand === 'FORD') return fordColors
   return moparColors
 }
