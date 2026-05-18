@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 
@@ -18,6 +19,8 @@ type Client = {
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     loadClients()
@@ -30,12 +33,10 @@ export default function ClientsPage() {
       .order('name', { ascending: true })
 
     setClients(data || [])
+    setLoading(false)
   }
 
   async function removeClient(id: string) {
-    const confirmed = confirm('Are you sure you want to remove this client?')
-    if (!confirmed) return
-
     const { error } = await supabase
       .from('clients')
       .delete()
@@ -46,6 +47,7 @@ export default function ClientsPage() {
       return
     }
 
+    setConfirmId(null)
     loadClients()
   }
 
@@ -53,65 +55,97 @@ export default function ClientsPage() {
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
 
-      <h2 className="text-4xl font-bold mb-8">
-        CLIENTS ({clients.length})
-      </h2>
+      {/* Custom confirm modal */}
+      {confirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-3xl p-8 max-w-sm w-full mx-4">
+            <h2 className="text-2xl font-bold mb-2">Remove Client</h2>
+            <p className="text-gray-400 text-lg mb-8">Are you sure you want to remove this client? This action cannot be undone.</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 px-5 py-4 rounded-2xl font-bold text-xl"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => removeClient(confirmId)}
+                className="flex-1 bg-red-700 hover:bg-red-600 px-5 py-4 rounded-2xl font-bold text-xl"
+              >
+                REMOVE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <a
-        href="/clients/new"
-        className="inline-block bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold mb-10"
-      >
-        ADD A NEW CLIENT
-      </a>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bold">
+          CLIENTS ({clients.length})
+        </h1>
 
-      <div className="space-y-5">
-        {clients.length === 0 ? (
-          <p className="text-gray-400 text-xl">
-            No clients yet.
-          </p>
-        ) : (
-          clients.map((client) => (
+        <Link
+          href="/clients/new"
+          className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold"
+        >
+          ADD A NEW CLIENT
+        </Link>
+      </div>
+
+      {loading ? (
+        <p className="text-2xl text-gray-400">Loading...</p>
+      ) : clients.length === 0 ? (
+        <p className="text-2xl text-gray-400">No clients yet.</p>
+      ) : (
+        <div className="space-y-5">
+          {clients.map((client) => (
             <div
               key={client.id}
-              className="border border-gray-800 rounded-3xl p-5 flex items-center justify-between gap-5"
+              className="bg-gray-900 border border-gray-800 rounded-3xl p-6 flex items-center justify-between"
             >
               <div>
-                <h3 className="text-2xl font-bold">
+                <h2 className="text-2xl font-bold">
                   {client.name}
-                </h3>
+                </h2>
 
-                <p className="text-gray-400">
+                <p className="text-lg text-gray-400">
                   {client.email || '-'}
                 </p>
 
-                <p className="text-gray-400">
+                <p className="text-lg text-gray-400">
                   {client.phone || '-'}
                 </p>
 
-                <p className="text-gray-400">
-                  {client.city || '-'}, {client.state || '-'} {client.zip || ''}
+                <p className="text-lg text-gray-400">
+                  {[client.city, client.state, client.zip].filter(Boolean).join(', ')}
                 </p>
+
+                {client.country && (
+                  <p className="text-lg text-gray-400">
+                    {client.country}
+                  </p>
+                )}
               </div>
 
-              <div className="flex gap-3">
-                <a
+              <div className="flex gap-3 flex-wrap">
+                <Link
                   href={`/clients/edit/${client.id}`}
                   className="bg-blue-700 hover:bg-blue-600 px-5 py-3 rounded-2xl font-bold"
                 >
                   EDIT
-                </a>
+                </Link>
 
                 <button
-                  onClick={() => removeClient(client.id)}
+                  onClick={() => setConfirmId(client.id)}
                   className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
                 >
                   REMOVE
                 </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </main>
   )
 }
