@@ -11,6 +11,7 @@ type Expense = {
   type: string
   description: string | null
   amount: number
+  source: string | null
   expense_date: string
 }
 
@@ -159,6 +160,9 @@ export default function ExpensesPage() {
                   <p className="text-lg text-white">{expense.description}</p>
                 )}
                 <p className="text-lg text-gray-400">{expense.type}</p>
+                {expense.source && (
+                  <p className="text-lg text-gray-400">{expense.source}</p>
+                )}
                 <p className="text-lg text-gray-400">{formatDate(expense.expense_date)}</p>
               </div>
 

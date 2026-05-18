@@ -7,6 +7,7 @@ import DatePicker from '@/components/DatePicker'
 import { supabase } from '@/lib/supabase'
 
 const expenseTypes = ['DAILY', 'WEEKLY', 'MONTHLY', 'SINGLE']
+const expenseSources = ['Regions', 'Cash', 'GZ28BR', 'Humberto']
 
 function getTodayString() {
   const today = new Date()
@@ -27,6 +28,7 @@ export default function NewExpensePage() {
   const [type, setType] = useState('SINGLE')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
+  const [source, setSource] = useState('Regions')
   const [expenseDate, setExpenseDate] = useState(getTodayString())
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function NewExpensePage() {
         type,
         description: description || null,
         amount: parseFloat(amount),
+        source,
         expense_date: expenseDate,
       }])
 
@@ -133,6 +136,19 @@ export default function NewExpensePage() {
               placeholder="0.00"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">SOURCE</label>
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            className={selectClass}
+          >
+            {expenseSources.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         <button

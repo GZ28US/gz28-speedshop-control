@@ -7,6 +7,7 @@ import DatePicker from '@/components/DatePicker'
 import { supabase } from '@/lib/supabase'
 
 const expenseTypes = ['DAILY', 'WEEKLY', 'MONTHLY', 'SINGLE']
+const expenseSources = ['Regions', 'Cash', 'GZ28BR', 'Humberto']
 
 export default function EditExpensePage() {
   const params = useParams()
@@ -21,6 +22,7 @@ export default function EditExpensePage() {
   const [type, setType] = useState('SINGLE')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
+  const [source, setSource] = useState('Regions')
   const [expenseDate, setExpenseDate] = useState('')
 
   useEffect(() => {
@@ -64,6 +66,7 @@ export default function EditExpensePage() {
     setType(data.type || 'SINGLE')
     setDescription(data.description || '')
     setAmount(String(data.amount || ''))
+    setSource(data.source || 'Regions')
     setExpenseDate(data.expense_date || '')
     setLoading(false)
   }
@@ -80,6 +83,7 @@ export default function EditExpensePage() {
         type,
         description: description || null,
         amount: parseFloat(amount),
+        source,
         expense_date: expenseDate,
         updated_at: new Date().toISOString(),
       })
@@ -158,6 +162,19 @@ export default function EditExpensePage() {
               placeholder="0.00"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-lg font-bold">SOURCE</label>
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            className={selectClass}
+          >
+            {expenseSources.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         <button
