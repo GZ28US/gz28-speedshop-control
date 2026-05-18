@@ -102,9 +102,21 @@ export default function ExpensesPage() {
       .from('expenses')
       .select('*')
       .eq('season_id', seasonID)
-      .order('created_at', { ascending: false })
 
-    setExpenses(data || [])
+    if (data) {
+      const ongoing = data.filter(e => e.type !== 'SINGLE')
+      const singles = data
+        .filter(e => e.type === 'SINGLE')
+        .sort((a, b) => {
+          if (!a.expense_date) return 1
+          if (!b.expense_date) return -1
+          return b.expense_date.localeCompare(a.expense_date)
+        })
+      setExpenses([...ongoing, ...singles])
+    } else {
+      setExpenses([])
+    }
+
     setLoading(false)
   }
 
