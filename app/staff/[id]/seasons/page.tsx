@@ -73,6 +73,24 @@ export default function SeasonsPage() {
     setStaff(data || null)
   }
 
+  async function renumberSeasons() {
+    const { data } = await supabase
+      .from('seasons')
+      .select('id, date_entry')
+      .eq('staff_id', staffId)
+      .order('date_entry', { ascending: true })
+
+    if (!data) return
+
+    for (let i = 0; i < data.length; i++) {
+      const code = `US.${String(i + 1).padStart(3, '0')}`
+      await supabase
+        .from('seasons')
+        .update({ season_code: code })
+        .eq('id', data[i].id)
+    }
+  }
+
   async function loadSeasons() {
     const { data: seasonData } = await supabase
       .from('seasons')
@@ -107,6 +125,7 @@ export default function SeasonsPage() {
     }
 
     setConfirmId(null)
+    await renumberSeasons()
     loadSeasons()
   }
 
@@ -204,23 +223,4 @@ export default function SeasonsPage() {
 
                   <Link
                     href={`/staff/${staffId}/seasons/edit/${season.id}`}
-                    className="bg-blue-700 hover:bg-blue-600 px-5 py-3 rounded-2xl font-bold"
-                  >
-                    EDIT
-                  </Link>
-
-                  <button
-                    onClick={() => setConfirmId(season.id)}
-                    className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-bold"
-                  >
-                    REMOVE
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </main>
-  )
-}
+                    className="bg-blue-700 hover:bg-blue-600 px-5 py-3 r
