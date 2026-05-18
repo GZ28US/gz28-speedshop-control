@@ -8,30 +8,33 @@ export default function Header() {
       </h1>
 
       <div className="flex gap-4 flex-wrap">
-        <a
+        
           href="/"
           className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold"
         >
           HOME
         </a>
 
-        <a
+        
           href="/clients"
           className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold"
         >
           CLIENTS
         </a>
 
-        <a
+        
           href="/rides"
           className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold"
         >
           RIDES
         </a>
 
-        <button className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold">
+        
+          href="/staff"
+          className="bg-gray-900 hover:bg-gray-700 border border-gray-700 px-6 py-4 rounded-2xl text-xl font-bold"
+        >
           STAFF
-        </button>
+        </a>
       </div>
     </div>
   )
