@@ -26,7 +26,6 @@ type Client = {
   city: string | null
   state: string | null
   zip: string | null
-  country: string | null
 }
 
 type Part = { id: string; description: string; unit_price: number; quantity: number }
@@ -34,9 +33,6 @@ type Service = { id: string; description: string; price: number }
 type Payment = { id: string; amount: number; payment_date: string | null; source: string }
 type Note = { id: string; note: string }
 type Expense = { id: string; expense_date: string | null; supplier: string | null; item: string; price: number; payment_date: string | null }
-
-// ── PASTE YOUR BASE64 STRING BELOW (replace the placeholder) ──
-
 
 export default function ViewInvoicePage() {
   const params = useParams()
@@ -47,7 +43,7 @@ export default function ViewInvoicePage() {
   const [projectCode, setProjectCode] = useState('')
   const [projectName, setProjectName] = useState('')
   const [client, setClient] = useState<Client | null>(null)
-  const [rideInfo, setRideInfo] = useState<any>(null)
+  const [ride, setRide] = useState<any>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [parts, setParts] = useState<Part[]>([])
   const [services, setServices] = useState<Service[]>([])
@@ -58,12 +54,27 @@ export default function ViewInvoicePage() {
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
-    const { data: ride } = await supabase.from('rides').select('*, clients(*)').eq('id', rideId).single()
-    if (ride) {
-      setProjectCode(ride.project_code || '')
-      setProjectName(ride.project_name || '')
-      setRideInfo(ride)
-      if (ride.clients) setClient(ride.clients)
+    // Load ride
+    const { data: rideData } = await supabase
+      .from('rides')
+      .select('*')
+      .eq('id', rideId)
+      .single()
+
+    if (rideData) {
+      setRide(rideData)
+      setProjectCode(rideData.project_code || '')
+      setProjectName(rideData.project_name || '')
+
+      // Load client separately if ride has client_id
+      if (rideData.client_id) {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', rideData.client_id)
+          .single()
+        if (clientData) setClient(clientData)
+      }
     }
 
     const { data: inv } = await supabase.from('invoices').select('*').eq('id', invoiceId).single()
@@ -89,22 +100,20 @@ export default function ViewInvoicePage() {
 
   function formatDate(d: string | null) {
     if (!d) return '—'
-    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
   }
 
-  function isValidDate(d: string | null) { return !!d && d.match(/^\d{4}-\d{2}-\d{2}$/) !== null }
+  function isValidDate(d: string | null) { return !!d && /^\d{4}-\d{2}-\d{2}$/.test(d) }
 
   function getStatus() {
     if (!invoice?.delivery_date) return 'OPEN'
     const today = new Date(); today.setHours(0, 0, 0, 0)
-    const d = new Date(invoice.delivery_date + 'T00:00:00')
-    return d <= today ? 'CLOSED' : 'OPEN'
+    return new Date(invoice.delivery_date + 'T00:00:00') <= today ? 'CLOSED' : 'OPEN'
   }
 
   if (loading) return (
     <main className="min-h-screen bg-black text-white p-8"><Header /><p className="text-2xl text-gray-400">Loading...</p></main>
   )
-
   if (!invoice) return (
     <main className="min-h-screen bg-black text-white p-8"><Header /><p className="text-2xl text-gray-400">Invoice not found.</p></main>
   )
@@ -115,6 +124,7 @@ export default function ViewInvoicePage() {
   const partsTotal = partsSubTotal + floridaTaxesAmount
   const servicesTotal = services.reduce((s, sv) => s + sv.price, 0)
   const partsAndServicesTotal = partsTotal + servicesTotal
+  const hasDiscount = (invoice.global_discount || 0) > 0
   const globalDiscountAmount = partsAndServicesTotal * ((invoice.global_discount || 0) / 100)
   const grandTotal = partsAndServicesTotal - globalDiscountAmount
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0)
@@ -128,36 +138,43 @@ export default function ViewInvoicePage() {
   const finalProfitPct = expensesTotalGlobal > 0 ? (finalProfit / expensesTotalGlobal) * 100 : 0
   const profitColor = (val: number) => val < 0 ? 'text-red-500' : 'text-blue-400'
   const status = getStatus()
-  const hasDiscount = (invoice.global_discount || 0) > 0
 
   const rowClass = 'flex items-center justify-between gap-4 px-4 py-3 border-b border-gray-700 last:border-0'
   const labelClass = 'text-gray-400 font-bold'
   const sectionClass = 'bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden'
 
+  // Vehicle display string
+  const vehicleLine = [ride?.manufacturer, ride?.brand, ride?.model, ride?.version].filter(Boolean).join(' — ')
+  const vehicleYear = ride?.year ? String(ride.year) : null
+
   return (
     <>
-      {/* ── PRINT STYLES ── */}
       <style>{`
         @media print {
-          body { background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          body { background: white !important; margin: 0; }
           .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          .print-page {
-            display: block !important;
-            background: white;
-            color: #111;
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            padding: 20px 28px;
-            max-width: 100%;
-          }
-          @page { margin: 0.4in; size: letter; }
+          .print-page { display: block !important; }
+          @page { margin: 0.35in; size: letter; }
         }
-        .print-only { display: none; }
         .print-page { display: none; }
 
-        /* ── PRINT PAGE STYLES ── */
-        .pi-logo-row {
+        .pi * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        .pi { position: relative; background: white; color: #111; font-size: 10px; }
+
+        .pi-watermark {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 0.06;
+          width: 420px;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .pi-content { position: relative; z-index: 1; }
+
+        .pi-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -165,187 +182,207 @@ export default function ViewInvoicePage() {
           padding-bottom: 10px;
           margin-bottom: 10px;
         }
-        .pi-logo { height: 52px; width: auto; }
-        .pi-company { text-align: right; }
-        .pi-company-name { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; }
-        .pi-company-sub { font-size: 9px; color: #555; margin-top: 1px; }
+        .pi-logo { height: 56px; width: auto; }
+        .pi-company { text-align: center; }
+        .pi-company-name { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .pi-company-sub { font-size: 9px; color: #555; line-height: 1.5; }
         .pi-inv-box { text-align: right; }
         .pi-inv-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .pi-inv-num { font-size: 20px; font-weight: 900; color: #c00; }
-        .pi-inv-date { font-size: 9px; color: #555; }
+        .pi-inv-num { font-size: 22px; font-weight: 900; color: #cc0000; letter-spacing: 1px; }
+        .pi-inv-date { font-size: 9px; color: #555; margin-top: 2px; }
+
         .pi-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .pi-info-block { border: 0.5px solid #ccc; border-radius: 4px; padding: 6px 10px; }
-        .pi-info-title { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; border-bottom: 0.5px solid #eee; padding-bottom: 3px; margin-bottom: 4px; }
+        .pi-info-block { border: 0.5px solid #ccc; border-radius: 4px; padding: 7px 10px; }
+        .pi-info-title { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; border-bottom: 0.5px solid #eee; padding-bottom: 3px; margin-bottom: 5px; }
         .pi-info-row { display: flex; gap: 4px; margin-bottom: 2px; }
-        .pi-info-label { font-weight: 700; color: #666; min-width: 55px; font-size: 9px; }
+        .pi-info-label { font-weight: 700; color: #666; min-width: 52px; font-size: 9px; flex-shrink: 0; }
         .pi-info-value { color: #111; font-size: 9px; }
-        .pi-section-title { background: #111; color: white; font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; }
-        .pi-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 8px; }
-        .pi-table thead tr { background: #e8e8e8; }
-        .pi-table thead th { padding: 3px 8px; text-align: left; font-weight: 700; font-size: 8px; text-transform: uppercase; letter-spacing: 0.3px; border: 0.5px solid #ccc; }
+
+        .pi-sec { margin-bottom: 9px; }
+        .pi-sec-title { background: #111; color: white; font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; }
+
+        .pi-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        .pi-table thead tr { background: #e0e0e0; }
+        .pi-table thead th { padding: 3px 8px; text-align: left; font-weight: 700; font-size: 8px; text-transform: uppercase; border: 0.5px solid #bbb; }
         .pi-table thead th.r { text-align: right; }
-        .pi-table tbody tr { border-bottom: 0.5px solid #eee; }
-        .pi-table tbody tr:nth-child(even) { background: #fafafa; }
-        .pi-table tbody td { padding: 3px 8px; border-left: 0.5px solid #eee; border-right: 0.5px solid #eee; }
-        .pi-table tbody td.r { text-align: right; }
-        .pi-subtotal td { background: #f0f0f0; font-weight: 700; padding: 3px 8px; border-top: 1px solid #bbb; }
-        .pi-taxes td { background: #c00; color: white; font-weight: 700; padding: 3px 8px; }
-        .pi-ptotal td { background: #111; color: white; font-weight: 900; padding: 4px 8px; }
-        .pi-stotal td { background: #111; color: white; font-weight: 900; padding: 4px 8px; }
-        .pi-totals-right { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-        .pi-totals-table { width: 260px; border-collapse: collapse; font-size: 9px; }
-        .pi-totals-table td { padding: 3px 8px; }
-        .pi-totals-table .r { text-align: right; }
-        .pi-grand td { background: #1a1a2e; color: #f0c040; font-weight: 900; font-size: 11px; padding: 5px 8px; border-top: 2px solid #f0c040; }
-        .pi-balance td { background: #1a1a2e; color: #4ade80; font-weight: 900; font-size: 10px; padding: 4px 8px; }
-        .pi-notes-box { border: 0.5px solid #ccc; border-radius: 4px; padding: 8px 10px; margin-bottom: 10px; text-align: center; font-size: 9px; }
-        .pi-notes-title { font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 8px; color: #666; margin-bottom: 5px; }
-        .pi-notes-box p { margin-bottom: 2px; }
-        .pi-sig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 12px; border-top: 1px solid #ccc; padding-top: 10px; }
+        .pi-table tbody td { padding: 3px 8px; border-left: 0.5px solid #e8e8e8; border-right: 0.5px solid #e8e8e8; border-bottom: 0.5px solid #ececec; }
+        .pi-table tbody tr:nth-child(even) td { background: #fafafa; }
+        .pi-table td.r { text-align: right; }
+
+        .pi-subtotal td { background: #efefef !important; font-weight: 700; padding: 3px 8px; border-top: 1px solid #bbb !important; }
+        .pi-taxes td { background: #cc0000 !important; color: white !important; font-weight: 700; padding: 3px 8px; }
+        .pi-ptotal td { background: #111 !important; color: white !important; font-weight: 900; font-size: 10px; padding: 4px 8px; }
+        .pi-stotal td { background: #111 !important; color: white !important; font-weight: 900; font-size: 10px; padding: 4px 8px; }
+
+        .pi-totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 9px; }
+        .pi-totals-tbl { width: 270px; border-collapse: collapse; font-size: 9px; }
+        .pi-totals-tbl td { padding: 3px 8px; }
+        .pi-totals-tbl .r { text-align: right; }
+        .pi-psrow td { background: #f0f0f0; font-weight: 700; }
+        .pi-discrow td { background: #f0f0f0; font-weight: 700; color: #cc0000; }
+        .pi-grandrow td { background: #1a1a2e !important; color: #f0c040 !important; font-weight: 900; font-size: 12px; padding: 6px 8px; border-top: 2px solid #f0c040 !important; }
+
+        .pi-pay-subtotal td { background: #efefef !important; font-weight: 700; padding: 3px 8px; border-top: 1px solid #bbb !important; }
+        .pi-balance td { background: #1a1a2e !important; color: #4ade80 !important; font-weight: 900; font-size: 11px; padding: 5px 8px; }
+
+        .pi-notes { border: 0.5px solid #ccc; border-radius: 4px; padding: 8px 14px; margin-bottom: 10px; text-align: center; }
+        .pi-notes-title { font-weight: 700; text-transform: uppercase; font-size: 8px; letter-spacing: 0.5px; color: #888; margin-bottom: 5px; }
+        .pi-notes p { font-size: 9px; margin-bottom: 2px; }
+
+        .pi-sig { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 14px; border-top: 1px solid #ccc; padding-top: 10px; }
         .pi-sig-block { text-align: center; }
-        .pi-sig-line { border-bottom: 1px solid #111; height: 28px; margin-bottom: 4px; }
+        .pi-sig-line { border-bottom: 1px solid #333; height: 30px; margin-bottom: 4px; }
         .pi-sig-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
       `}</style>
 
-      {/* ── PRINT PAGE (hidden on screen, visible when printing) ── */}
-      <div className="print-page print-only">
-        {/* Header */}
-        <div className="pi-logo-row">
-          <img src="/logo_gz28.jpg" className="pi-logo" alt="GZ28 Logo" />
-          <div className="pi-company">
-            <div className="pi-company-name">GZ28 V8 SpeedShop USA LLC</div>
-            <div className="pi-company-sub">11320 Space Blvd, 32837, Orlando / FL</div>
-            <div className="pi-company-sub">PHONE: (321) 315.0973 · EMAIL: gz28us@hotmail.com</div>
-            <div className="pi-company-sub">IG: @gz28us / @gz28br · FB: Dema De Maria</div>
-          </div>
-          <div className="pi-inv-box">
-            <div className="pi-inv-label">Invoice #</div>
-            <div className="pi-inv-num">{invoice.invoice_code}</div>
-            <div className="pi-inv-date">Entry: {formatDate(invoice.entry_date)}</div>
-          </div>
-        </div>
+      {/* ── PRINT PAGE ── */}
+      <div className="print-page">
+        <div className="pi">
+          {/* Watermark */}
+          <img src="/logo_gz28.jpg" className="pi-watermark" alt="" aria-hidden="true" />
 
-        {/* Client + Vehicle */}
-        <div className="pi-two-col">
-          <div className="pi-info-block">
-            <div className="pi-info-title">Client</div>
-            {client ? <>
-              <div className="pi-info-row"><span className="pi-info-label">Name:</span><span className="pi-info-value">{client.name}</span></div>
-              {client.address && <div className="pi-info-row"><span className="pi-info-label">Address:</span><span className="pi-info-value">{client.address}</span></div>}
-              {(client.city || client.state) && <div className="pi-info-row"><span className="pi-info-label">City/ST:</span><span className="pi-info-value">{[client.city, client.state].filter(Boolean).join(' / ')}{client.zip ? ` ${client.zip}` : ''}</span></div>}
-              {client.phone && <div className="pi-info-row"><span className="pi-info-label">Phone:</span><span className="pi-info-value">{client.phone}</span></div>}
-              {client.email && <div className="pi-info-row"><span className="pi-info-label">Email:</span><span className="pi-info-value">{client.email}</span></div>}
-            </> : <div className="pi-info-value" style={{color:'#aaa'}}>No client linked</div>}
-          </div>
-          <div className="pi-info-block">
-            <div className="pi-info-title">Vehicle</div>
-            {rideInfo?.brand && <div className="pi-info-row"><span className="pi-info-label">Brand:</span><span className="pi-info-value">{rideInfo.brand}</span></div>}
-            {rideInfo?.model && <div className="pi-info-row"><span className="pi-info-label">Model:</span><span className="pi-info-value">{rideInfo.model}{rideInfo.version ? ` — ${rideInfo.version}` : ''}</span></div>}
-            {rideInfo?.year && <div className="pi-info-row"><span className="pi-info-label">Year:</span><span className="pi-info-value">{rideInfo.year}</span></div>}
-            {rideInfo?.color && <div className="pi-info-row"><span className="pi-info-label">Color:</span><span className="pi-info-value">{rideInfo.color}</span></div>}
-            {rideInfo?.vin && <div className="pi-info-row"><span className="pi-info-label">VIN:</span><span className="pi-info-value">{rideInfo.vin}</span></div>}
-            {rideInfo?.plate && <div className="pi-info-row"><span className="pi-info-label">Plate:</span><span className="pi-info-value">{rideInfo.plate}</span></div>}
-            {invoice.mileage && <div className="pi-info-row"><span className="pi-info-label">Mileage:</span><span className="pi-info-value">{Number(invoice.mileage).toLocaleString('en-US')}</span></div>}
-            {rideInfo?.project_name && <div className="pi-info-row"><span className="pi-info-label">Project:</span><span className="pi-info-value">{rideInfo.project_name}</span></div>}
-            {rideInfo?.special_edition && <div className="pi-info-row"><span className="pi-info-label">Pack:</span><span className="pi-info-value">{rideInfo.special_edition}</span></div>}
-          </div>
-        </div>
+          <div className="pi-content">
+            {/* Header */}
+            <div className="pi-header">
+              <img src="/logo_gz28.jpg" className="pi-logo" alt="GZ28 Logo" />
+              <div className="pi-company">
+                <div className="pi-company-name">GZ28 V8 SpeedShop USA LLC</div>
+                <div className="pi-company-sub">11320 Space Blvd, 32837, Orlando / FL</div>
+                <div className="pi-company-sub">PHONE: (321) 315.0973 · EMAIL: gz28us@hotmail.com</div>
+                <div className="pi-company-sub">IG: @gz28us / @gz28br · FB: Dema De Maria</div>
+              </div>
+              <div className="pi-inv-box">
+                <div className="pi-inv-label">Invoice #</div>
+                <div className="pi-inv-num">{invoice.invoice_code}</div>
+                <div className="pi-inv-date">Entry: {formatDate(invoice.entry_date)}</div>
+                {invoice.delivery_date && <div className="pi-inv-date">Delivery: {formatDate(invoice.delivery_date)}</div>}
+              </div>
+            </div>
 
-        {/* Parts */}
-        {parts.length > 0 && <>
-          <div className="pi-section-title">Parts</div>
-          <table className="pi-table">
-            <thead><tr>
-              <th style={{width:'55%'}}>Description</th>
-              <th className="r" style={{width:'17%'}}>Unit Price</th>
-              <th className="r" style={{width:'8%'}}>Qt</th>
-              <th className="r" style={{width:'20%'}}>Total</th>
-            </tr></thead>
-            <tbody>
-              {parts.map(p => (
-                <tr key={p.id}>
-                  <td>{p.description}</td>
-                  <td className="r">{p.unit_price === 0 ? '—' : formatUSD(p.unit_price)}</td>
-                  <td className="r">{p.quantity}</td>
-                  <td className="r">{p.unit_price === 0 ? '—' : formatUSD(p.unit_price * p.quantity)}</td>
-                </tr>
-              ))}
-              <tr className="pi-subtotal"><td colSpan={3} className="r">Sub-Total</td><td className="r">{formatUSD(partsSubTotal)}</td></tr>
-              {(invoice.florida_taxes || 0) > 0 && <tr className="pi-taxes"><td colSpan={3} className="r">Florida Taxes {invoice.florida_taxes}%</td><td className="r">{formatUSD(floridaTaxesAmount)}</td></tr>}
-              <tr className="pi-ptotal"><td colSpan={3} className="r">Parts Total</td><td className="r">{formatUSD(partsTotal)}</td></tr>
-            </tbody>
-          </table>
-        </>}
+            {/* Client + Vehicle */}
+            <div className="pi-two-col">
+              <div className="pi-info-block">
+                <div className="pi-info-title">Client</div>
+                {client ? <>
+                  <div className="pi-info-row"><span className="pi-info-label">Name:</span><span className="pi-info-value">{client.name}</span></div>
+                  {client.address && <div className="pi-info-row"><span className="pi-info-label">Address:</span><span className="pi-info-value">{client.address}</span></div>}
+                  {(client.city || client.state) && <div className="pi-info-row"><span className="pi-info-label">City/ST:</span><span className="pi-info-value">{[client.city, client.state].filter(Boolean).join(' / ')}{client.zip ? ` ${client.zip}` : ''}</span></div>}
+                  {client.phone && <div className="pi-info-row"><span className="pi-info-label">Phone:</span><span className="pi-info-value">{client.phone}</span></div>}
+                  {client.email && <div className="pi-info-row"><span className="pi-info-label">E-Mail:</span><span className="pi-info-value">{client.email}</span></div>}
+                </> : <div className="pi-info-value" style={{color:'#999',fontStyle:'italic'}}>No client linked</div>}
+              </div>
+              <div className="pi-info-block">
+                <div className="pi-info-title">Vehicle</div>
+                {ride?.manufacturer && <div className="pi-info-row"><span className="pi-info-label">Make:</span><span className="pi-info-value">{ride.manufacturer}</span></div>}
+                {ride?.brand && <div className="pi-info-row"><span className="pi-info-label">Brand:</span><span className="pi-info-value">{ride.brand}</span></div>}
+                {ride?.model && <div className="pi-info-row"><span className="pi-info-label">Model:</span><span className="pi-info-value">{ride.model}{ride.version ? ` — ${ride.version}` : ''}</span></div>}
+                {vehicleYear && <div className="pi-info-row"><span className="pi-info-label">Year:</span><span className="pi-info-value">{vehicleYear}</span></div>}
+                {ride?.color && <div className="pi-info-row"><span className="pi-info-label">Color:</span><span className="pi-info-value">{ride.color}</span></div>}
+                {ride?.vin && <div className="pi-info-row"><span className="pi-info-label">VIN:</span><span className="pi-info-value">{ride.vin}</span></div>}
+                {ride?.plate && <div className="pi-info-row"><span className="pi-info-label">Plate:</span><span className="pi-info-value">{ride.plate}</span></div>}
+                {invoice.mileage && <div className="pi-info-row"><span className="pi-info-label">Mileage:</span><span className="pi-info-value">{Number(invoice.mileage).toLocaleString('en-US')}</span></div>}
+                {ride?.project_name && <div className="pi-info-row"><span className="pi-info-label">Project:</span><span className="pi-info-value">{ride.project_name}</span></div>}
+                {ride?.special_edition && <div className="pi-info-row"><span className="pi-info-label">Pack:</span><span className="pi-info-value">{ride.special_edition}</span></div>}
+              </div>
+            </div>
 
-        {/* Services */}
-        {services.length > 0 && <>
-          <div className="pi-section-title">Services</div>
-          <table className="pi-table">
-            <thead><tr>
-              <th style={{width:'80%'}}>Description</th>
-              <th className="r" style={{width:'20%'}}>Total</th>
-            </tr></thead>
-            <tbody>
-              {services.map(sv => (
-                <tr key={sv.id}>
-                  <td>{sv.description}</td>
-                  <td className="r">{sv.price === 0 ? 'COURTESY' : formatUSD(sv.price)}</td>
-                </tr>
-              ))}
-              <tr className="pi-stotal"><td className="r">Services Total</td><td className="r">{formatUSD(servicesTotal)}</td></tr>
-            </tbody>
-          </table>
-        </>}
+            {/* Parts */}
+            {parts.length > 0 && <div className="pi-sec">
+              <div className="pi-sec-title">Parts</div>
+              <table className="pi-table">
+                <thead><tr>
+                  <th style={{width:'55%'}}>Description</th>
+                  <th className="r" style={{width:'17%'}}>Unit Price</th>
+                  <th className="r" style={{width:'8%'}}>Qt</th>
+                  <th className="r" style={{width:'20%'}}>Total</th>
+                </tr></thead>
+                <tbody>
+                  {parts.map(p => (
+                    <tr key={p.id}>
+                      <td>{p.description}</td>
+                      <td className="r">{p.unit_price === 0 ? '—' : formatUSD(p.unit_price)}</td>
+                      <td className="r">{p.quantity}</td>
+                      <td className="r">{p.unit_price === 0 ? '—' : formatUSD(p.unit_price * p.quantity)}</td>
+                    </tr>
+                  ))}
+                  <tr className="pi-subtotal"><td colSpan={3} className="r">Sub-Total</td><td className="r">{formatUSD(partsSubTotal)}</td></tr>
+                  {(invoice.florida_taxes || 0) > 0 && <tr className="pi-taxes"><td colSpan={3} className="r">Florida Taxes {invoice.florida_taxes}%</td><td className="r">{formatUSD(floridaTaxesAmount)}</td></tr>}
+                  <tr className="pi-ptotal"><td colSpan={3} className="r">Parts Total</td><td className="r">{formatUSD(partsTotal)}</td></tr>
+                </tbody>
+              </table>
+            </div>}
 
-        {/* Totals */}
-        <div className="pi-totals-right">
-          <table className="pi-totals-table">
-            <tbody>
-              <tr style={{background:'#f5f5f5'}}><td style={{fontWeight:700}}>Parts + Services</td><td className="r" style={{fontWeight:700}}>{formatUSD(partsAndServicesTotal)}</td></tr>
-              {hasDiscount && <tr style={{background:'#f5f5f5'}}><td style={{fontWeight:700,color:'#c00'}}>Discount ({invoice.global_discount}%)</td><td className="r" style={{fontWeight:700,color:'#c00'}}>— {formatUSD(globalDiscountAmount)}</td></tr>}
-              <tr className="pi-grand"><td>Grand Total</td><td className="r">{formatUSD(grandTotal)}</td></tr>
-            </tbody>
-          </table>
-        </div>
+            {/* Services */}
+            {services.length > 0 && <div className="pi-sec">
+              <div className="pi-sec-title">Services</div>
+              <table className="pi-table">
+                <thead><tr>
+                  <th style={{width:'80%'}}>Description</th>
+                  <th className="r" style={{width:'20%'}}>Total</th>
+                </tr></thead>
+                <tbody>
+                  {services.map(sv => (
+                    <tr key={sv.id}>
+                      <td>{sv.description}</td>
+                      <td className="r">{sv.price === 0 ? 'COURTESY' : formatUSD(sv.price)}</td>
+                    </tr>
+                  ))}
+                  <tr className="pi-stotal"><td className="r">Services Total</td><td className="r">{formatUSD(servicesTotal)}</td></tr>
+                </tbody>
+              </table>
+            </div>}
 
-        {/* Payments */}
-        {payments.length > 0 && <>
-          <div className="pi-section-title">Payments</div>
-          <table className="pi-table">
-            <thead><tr>
-              <th style={{width:'18%'}}>Date</th>
-              <th style={{width:'62%'}}>Source</th>
-              <th className="r" style={{width:'20%'}}>Amount</th>
-            </tr></thead>
-            <tbody>
-              {payments.map(p => (
-                <tr key={p.id}>
-                  <td>{formatDate(p.payment_date)}</td>
-                  <td>{p.source}</td>
-                  <td className="r">{formatUSD(p.amount)}</td>
-                </tr>
-              ))}
-              <tr className="pi-subtotal"><td colSpan={2} className="r">Total Paid</td><td className="r">{formatUSD(totalPaid)}</td></tr>
-              <tr className="pi-balance"><td colSpan={2} className="r">Balance</td><td className="r">{formatUSD(balance)}</td></tr>
-            </tbody>
-          </table>
-        </>}
+            {/* Totals */}
+            <div className="pi-totals-wrap">
+              <table className="pi-totals-tbl">
+                <tbody>
+                  <tr className="pi-psrow"><td>Parts + Services</td><td className="r">{formatUSD(partsAndServicesTotal)}</td></tr>
+                  {hasDiscount && <tr className="pi-discrow"><td>Discount ({invoice.global_discount}%)</td><td className="r">— {formatUSD(globalDiscountAmount)}</td></tr>}
+                  <tr className="pi-grandrow"><td>Grand Total</td><td className="r">{formatUSD(grandTotal)}</td></tr>
+                </tbody>
+              </table>
+            </div>
 
-        {/* Notes */}
-        {notes.length > 0 && <div className="pi-notes-box">
-          <div className="pi-notes-title">Notes</div>
-          {notes.map(n => <p key={n.id}>{n.note}</p>)}
-        </div>}
+            {/* Payments */}
+            {payments.length > 0 && <div className="pi-sec">
+              <div className="pi-sec-title">Payments</div>
+              <table className="pi-table">
+                <thead><tr>
+                  <th style={{width:'18%'}}>Date</th>
+                  <th style={{width:'62%'}}>Source</th>
+                  <th className="r" style={{width:'20%'}}>Amount</th>
+                </tr></thead>
+                <tbody>
+                  {payments.map(p => (
+                    <tr key={p.id}>
+                      <td>{formatDate(p.payment_date)}</td>
+                      <td>{p.source}</td>
+                      <td className="r">{formatUSD(p.amount)}</td>
+                    </tr>
+                  ))}
+                  <tr className="pi-pay-subtotal"><td colSpan={2} className="r">Total Paid</td><td className="r">{formatUSD(totalPaid)}</td></tr>
+                  <tr className="pi-balance"><td colSpan={2} className="r">Balance</td><td className="r">{balance === 0 ? '$ —' : formatUSD(balance)}</td></tr>
+                </tbody>
+              </table>
+            </div>}
 
-        {/* Signature */}
-        <div className="pi-sig-row">
-          <div className="pi-sig-block">
-            <div className="pi-sig-line"></div>
-            <div className="pi-sig-label">Delivery Date</div>
-          </div>
-          <div className="pi-sig-block">
-            <div className="pi-sig-line"></div>
-            <div className="pi-sig-label">Client — Printed Name</div>
+            {/* Notes */}
+            {notes.length > 0 && <div className="pi-notes">
+              <div className="pi-notes-title">Notes</div>
+              {notes.map(n => <p key={n.id}>{n.note}</p>)}
+            </div>}
+
+            {/* Signature */}
+            <div className="pi-sig">
+              <div className="pi-sig-block">
+                <div className="pi-sig-line"></div>
+                <div className="pi-sig-label">Delivery Date</div>
+              </div>
+              <div className="pi-sig-block">
+                <div className="pi-sig-line"></div>
+                <div className="pi-sig-label">Client — Printed Name</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -371,7 +408,6 @@ export default function ViewInvoicePage() {
 
         <div className="grid grid-cols-1 gap-5 max-w-2xl">
 
-          {/* Header info */}
           <div className={sectionClass}>
             <div className={rowClass}><span className={labelClass}>ENTRY DATE</span><span className="font-bold">{formatDate(invoice.entry_date)}</span></div>
             <div className={rowClass}><span className={labelClass}>DELIVERY DATE</span><span className="font-bold">{formatDate(invoice.delivery_date)}</span></div>
@@ -379,7 +415,6 @@ export default function ViewInvoicePage() {
             {invoice.service && <div className={rowClass}><span className={labelClass}>SERVICE</span><span className="font-bold">{invoice.service}</span></div>}
           </div>
 
-          {/* Client */}
           {client && (
             <div>
               <label className="block mb-3 text-lg font-bold">CLIENT</label>
@@ -393,7 +428,6 @@ export default function ViewInvoicePage() {
             </div>
           )}
 
-          {/* Parts */}
           {parts.length > 0 && (
             <div>
               <label className="block mb-3 text-lg font-bold">PARTS</label>
@@ -413,7 +447,6 @@ export default function ViewInvoicePage() {
             </div>
           )}
 
-          {/* Services */}
           {services.length > 0 && (
             <div>
               <label className="block mb-3 text-lg font-bold">SERVICES</label>
@@ -429,14 +462,12 @@ export default function ViewInvoicePage() {
             </div>
           )}
 
-          {/* Totals */}
           <div className={sectionClass}>
             <div className={rowClass}><span className={labelClass}>PARTS + SERVICES TOTAL</span><span className="font-bold">{formatUSD(partsAndServicesTotal)}</span></div>
             {hasDiscount && <div className={rowClass}><span className={labelClass}>GLOBAL DISCOUNT ({invoice.global_discount}%)</span><span className="font-bold text-red-400">- {formatUSD(globalDiscountAmount)}</span></div>}
             <div className="px-4 py-3 flex justify-between"><span className="font-bold text-xl">GRAND TOTAL</span><span className="text-3xl font-bold">{formatUSD(grandTotal)}</span></div>
           </div>
 
-          {/* Payments */}
           {payments.length > 0 && (
             <div>
               <label className="block mb-3 text-lg font-bold">PAYMENTS</label>
@@ -455,7 +486,6 @@ export default function ViewInvoicePage() {
             </div>
           )}
 
-          {/* Notes */}
           {notes.length > 0 && (
             <div>
               <label className="block mb-3 text-lg font-bold">NOTES</label>
@@ -469,7 +499,6 @@ export default function ViewInvoicePage() {
             </div>
           )}
 
-          {/* Expenses */}
           {expenses.length > 0 && (
             <div>
               <label className="block mb-3 text-lg font-bold">EXPENSES</label>
