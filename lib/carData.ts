@@ -29,8 +29,8 @@ export const manufacturersByYear: Record<number, string[]> = {
   2022: ['MOPAR', 'GM', 'FORD'],
   2023: ['MOPAR', 'GM', 'FORD'],
   2024: ['MOPAR', 'GM', 'FORD'],
-  2025: ['MOPAR', 'GM'],
-  2026: ['MOPAR', 'GM'],
+  2025: ['MOPAR', 'GM', 'FORD'],
+  2026: ['MOPAR', 'GM', 'FORD'],
 }
 
 export const brandsByManufacturerAndYear: Record<string, Record<number, string[]>> = {
@@ -50,6 +50,7 @@ export const brandsByManufacturerAndYear: Record<string, Record<number, string[]
   FORD: {
     2017: ['FORD'], 2018: ['FORD'], 2019: ['FORD'], 2020: ['FORD'],
     2021: ['FORD'], 2022: ['FORD'], 2023: ['FORD'], 2024: ['FORD'],
+    2025: ['FORD'], 2026: ['FORD'],
   },
 }
 
@@ -82,6 +83,7 @@ export const modelsByBrandAndYear: Record<string, Record<number, string[]>> = {
   FORD: {
     2017: ['F150'], 2018: ['F150'], 2019: ['F150'], 2020: ['F150'],
     2021: ['F150'], 2022: ['F150'], 2023: ['F150'], 2024: ['F150'],
+    2025: ['F150'], 2026: ['F150'],
   },
 }
 
@@ -160,6 +162,8 @@ export const versionsByModelAndYear: Record<string, Record<number, string[]>> = 
     2022: ['SuperSnake 5.0L SC', '5.0L V8'],
     2023: ['SuperSnake 5.0L SC', '5.0L V8', '5.2L SC V8 Raptor R'],
     2024: ['SuperSnake 5.0L SC', '5.0L V8', '5.2L SC V8 Raptor R'],
+    2025: ['SuperSnake 5.0L SC', '5.0L V8', '5.2L SC V8 Raptor R'],
+    2026: ['SuperSnake 5.0L SC', '5.0L V8', '5.2L SC V8 Raptor R'],
   },
 }
 
@@ -186,6 +190,7 @@ const fordColors = ['Agate Black', 'Oxford White', 'Star White', 'Rapid Red', 'A
 const durangoColors = ['Billet Silver', 'DB Black', 'Destroyer Gray', 'F8 Green', 'Granite Crystal', 'In-Violet', 'Octane Red', 'Reactor Blue', 'Redline', 'Vice White', 'White Knuckle']
 const durangoColors2026 = ['Destroyer Gray', 'Diamond Black', 'Octane Red', 'Vapor Gray', 'White Knuckle']
 const durangoColors2026JailBreak = ['Destroyer Gray', 'Diamond Black', 'Green Machine', 'Octane Red', 'Vapor Gray', 'White Knuckle']
+const raptorRColors = ['Agate Black', 'Oxford White', 'Rapid Red', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver']
 
 const viperColorsByYear: Record<number, string[]> = {
   1992: ['Red'],
@@ -216,8 +221,6 @@ const corvetteColorsByYear: Record<number, string[]> = {
   2026: ['Admiral Blue', 'Arctic White', 'Black', 'Blade Silver', 'Competition Yellow', 'Hysteria Purple', 'Rapid Blue', 'Red Mist', 'Riptide Blue', 'Roswell Green', 'Sebring Orange', 'Torch Red'],
 }
 
-const raptorRColors = ['Agate Black', 'Oxford White', 'Rapid Red', 'Atlas Blue', 'Carbonized Gray', 'Iconic Silver']
-
 const colorsByConfiguration: Record<string, string[]> = {
   '2023-CHALLENGER-R/T ScatPack 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
   '2023-CHALLENGER-R/T ScatPack WideBody 6.4-Swinger': ['Sublime', 'F8 Green', 'White Knuckle'],
@@ -233,6 +236,8 @@ const colorsByConfiguration: Record<string, string[]> = {
   '2026-DURANGO-SRT HellCat 6.2-JailBreak': durangoColors2026JailBreak,
   '2023-F150-5.2L SC V8 Raptor R-None': raptorRColors,
   '2024-F150-5.2L SC V8 Raptor R-None': raptorRColors,
+  '2025-F150-5.2L SC V8 Raptor R-None': raptorRColors,
+  '2026-F150-5.2L SC V8 Raptor R-None': raptorRColors,
 }
 
 export function getAvailableColors(year: number, brand: string, model: string, version: string, specialEdition: string): string[] {
