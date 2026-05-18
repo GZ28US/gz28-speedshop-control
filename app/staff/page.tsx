@@ -4,19 +4,22 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
+import { formatUSD } from '@/lib/utils'
 
 type StaffMember = {
   id: string
   name: string
   position: string
   latestConclusion: string | null
-  hasActiveseason: boolean
+  hasActiveSeason: boolean
+  totalExpenses: number
 }
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [globalTotal, setGlobalTotal] = useState(0)
 
   useEffect(() => {
     loadStaff()
@@ -35,9 +38,38 @@ export default function StaffPage() {
 
     const { data: seasonsData } = await supabase
       .from('seasons')
-      .select('staff_id, date_conclusion')
+      .select('id, staff_id, date_entry, date_conclusion')
 
-    const staffWithSeasons: StaffMember[] = staffData.map((member) => {
+    const allSeasonIds = seasonsData?.map(s => s.id) || []
+
+    let expensesData: any[] = []
+    if (allSeasonIds.length > 0) {
+      const { data } = await supabase
+        .from('expenses')
+        .select('id, season_id, type, amount, expense_date')
+        .in('season_id', allSeasonIds)
+      expensesData = data || []
+    }
+
+    function calcSeasonTotal(seasonId: string, dateEntry: string | null, dateConclusion: string | null): number {
+      const start = dateEntry ? new Date(dateEntry + 'T00:00:00') : null
+      const end = dateConclusion ? new Date(dateConclusion + 'T00:00:00') : new Date()
+      const expenses = expensesData.filter(e => e.season_id === seasonId)
+
+      return expenses.reduce((sum, e) => {
+        const amount = Number(e.amount)
+        if (e.type === 'SINGLE') return sum + amount
+        if (!start) return sum
+        const diffMs = end.getTime() - start.getTime()
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+        if (e.type === 'DAILY') return sum + amount * diffDays
+        if (e.type === 'WEEKLY') return sum + amount * Math.floor(diffDays / 7)
+        if (e.type === 'MONTHLY') return sum + amount * Math.floor(diffDays / 30)
+        return sum
+      }, 0)
+    }
+
+    const staffWithData: StaffMember[] = staffData.map((member) => {
       const memberSeasons = seasonsData?.filter(s => s.staff_id === member.id) || []
       const hasActiveSeason = memberSeasons.some(s => !s.date_conclusion)
       const concluded = memberSeasons
@@ -45,18 +77,19 @@ export default function StaffPage() {
         .map(s => s.date_conclusion)
         .sort((a, b) => b.localeCompare(a))
       const latestConclusion = concluded[0] || null
+      const totalExpenses = memberSeasons.reduce((sum, s) => sum + calcSeasonTotal(s.id, s.date_entry, s.date_conclusion), 0)
 
       return {
         ...member,
         latestConclusion,
-        hasActiveseason: hasActiveSeason,
+        hasActiveSeason,
+        totalExpenses,
       }
     })
 
-    // Sort: active (no conclusion) first, then by latest conclusion descending
-    staffWithSeasons.sort((a, b) => {
-      if (a.hasActiveseason && !b.hasActiveseason) return -1
-      if (!a.hasActiveseason && b.hasActiveseason) return 1
+    staffWithData.sort((a, b) => {
+      if (a.hasActiveSeason && !b.hasActiveSeason) return -1
+      if (!a.hasActiveSeason && b.hasActiveSeason) return 1
       if (a.latestConclusion && b.latestConclusion) {
         return b.latestConclusion.localeCompare(a.latestConclusion)
       }
@@ -65,7 +98,9 @@ export default function StaffPage() {
       return a.name.localeCompare(b.name)
     })
 
-    setStaff(staffWithSeasons)
+    const total = staffWithData.reduce((sum, m) => sum + m.totalExpenses, 0)
+    setGlobalTotal(total)
+    setStaff(staffWithData)
     setLoading(false)
   }
 
@@ -124,6 +159,13 @@ export default function StaffPage() {
         </Link>
       </div>
 
+      {staff.length > 0 && (
+        <div className="bg-red-700 rounded-3xl p-6 mb-8 max-w-sm">
+          <p className="text-xl font-bold">GLOBAL EXPENSES TOTAL</p>
+          <p className="text-5xl font-bold">{formatUSD(globalTotal)}</p>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-2xl text-gray-400">Loading...</p>
       ) : staff.length === 0 ? (
@@ -138,6 +180,11 @@ export default function StaffPage() {
               <div>
                 <h2 className="text-2xl font-bold">{member.name}</h2>
                 <p className="text-lg text-gray-400">{member.position}</p>
+              </div>
+
+              <div className="bg-red-700 rounded-2xl px-6 py-4 text-center">
+                <p className="text-sm font-bold">GLOBAL EXPENSES TOTAL</p>
+                <p className="text-3xl font-bold">{formatUSD(member.totalExpenses)}</p>
               </div>
 
               <div className="flex gap-3 flex-wrap">

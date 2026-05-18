@@ -136,6 +136,9 @@ export default function SeasonsPage() {
     })
   }
 
+  const globalTotal = seasons.reduce((sum, season) => sum + calculateSeasonTotal(expenses, season), 0)
+  const hasActive = seasons.some(s => !s.date_conclusion)
+
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
@@ -185,6 +188,16 @@ export default function SeasonsPage() {
           </Link>
         </div>
       </div>
+
+      {seasons.length > 0 && (
+        <div className="bg-red-700 rounded-3xl p-6 mb-8 max-w-sm">
+          <p className="text-xl font-bold">GLOBAL EXPENSES TOTAL</p>
+          <p className="text-5xl font-bold">{formatUSD(globalTotal)}</p>
+          {hasActive && (
+            <p className="text-sm mt-2 opacity-80">Running — updated daily until conclusion</p>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <p className="text-2xl text-gray-400">Loading...</p>
