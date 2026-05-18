@@ -84,7 +84,7 @@ export default function EditExpensePage() {
         description: description || null,
         amount: parseFloat(amount),
         source,
-        expense_date: expenseDate,
+        expense_date: type === 'SINGLE' ? expenseDate : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', expenseId)
@@ -131,11 +131,13 @@ export default function EditExpensePage() {
           </select>
         </div>
 
-        <DatePicker
-          label="DATE"
-          value={expenseDate}
-          onChange={setExpenseDate}
-        />
+        {type === 'SINGLE' && (
+          <DatePicker
+            label="DATE"
+            value={expenseDate}
+            onChange={setExpenseDate}
+          />
+        )}
 
         <div>
           <label className="block mb-2 text-lg font-bold">DESCRIPTION</label>

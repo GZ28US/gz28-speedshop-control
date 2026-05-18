@@ -12,7 +12,53 @@ type Expense = {
   description: string | null
   amount: number
   source: string | null
-  expense_date: string
+  expense_date: string | null
+}
+
+type Season = {
+  season_code: string
+  staff_id: string
+  date_entry: string | null
+  date_conclusion: string | null
+}
+
+function calculateRunningTotal(expense: Expense, season: Season): number {
+  const amount = Number(expense.amount)
+  if (expense.type === 'SINGLE') return amount
+
+  const start = season.date_entry ? new Date(season.date_entry + 'T00:00:00') : null
+  if (!start) return 0
+
+  const end = season.date_conclusion
+    ? new Date(season.date_conclusion + 'T00:00:00')
+    : new Date()
+
+  const diffMs = end.getTime() - start.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (expense.type === 'DAILY') return amount * diffDays
+  if (expense.type === 'WEEKLY') return amount * Math.floor(diffDays / 7)
+  if (expense.type === 'MONTHLY') return amount * Math.floor(diffDays / 30)
+
+  return amount
+}
+
+function formatRunningLabel(expense: Expense, season: Season): string {
+  const start = season.date_entry ? new Date(season.date_entry + 'T00:00:00') : null
+  const end = season.date_conclusion
+    ? new Date(season.date_conclusion + 'T00:00:00')
+    : new Date()
+
+  if (!start) return ''
+
+  const diffMs = end.getTime() - start.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (expense.type === 'DAILY') return `${diffDays} days`
+  if (expense.type === 'WEEKLY') return `${Math.floor(diffDays / 7)} weeks`
+  if (expense.type === 'MONTHLY') return `${Math.floor(diffDays / 30)} months`
+
+  return ''
 }
 
 export default function ExpensesPage() {
@@ -20,7 +66,7 @@ export default function ExpensesPage() {
   const staffId = String(params.id)
   const seasonID = String(params.seasonID)
 
-  const [seasonCode, setSeasonCode] = useState('')
+  const [season, setSeason] = useState<Season | null>(null)
   const [staffName, setStaffName] = useState('')
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,19 +78,19 @@ export default function ExpensesPage() {
   }, [])
 
   async function loadInfo() {
-    const { data: season } = await supabase
+    const { data: seasonData } = await supabase
       .from('seasons')
-      .select('season_code, staff_id')
+      .select('season_code, staff_id, date_entry, date_conclusion')
       .eq('id', seasonID)
       .single()
 
-    if (season) {
-      setSeasonCode(season.season_code)
+    if (seasonData) {
+      setSeason(seasonData)
 
       const { data: staff } = await supabase
         .from('staff')
         .select('name')
-        .eq('id', season.staff_id)
+        .eq('id', seasonData.staff_id)
         .single()
 
       setStaffName(staff?.name || '')
@@ -56,7 +102,7 @@ export default function ExpensesPage() {
       .from('expenses')
       .select('*')
       .eq('season_id', seasonID)
-      .order('expense_date', { ascending: false })
+      .order('created_at', { ascending: false })
 
     setExpenses(data || [])
     setLoading(false)
@@ -77,13 +123,16 @@ export default function ExpensesPage() {
     loadExpenses()
   }
 
-  function formatDate(date: string) {
+  function formatDate(date: string | null) {
+    if (!date) return '-'
     return new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric'
     })
   }
 
-  const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
+  const grandTotal = season
+    ? expenses.reduce((sum, e) => sum + calculateRunningTotal(e, season), 0)
+    : 0
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -115,7 +164,7 @@ export default function ExpensesPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold">
-            {staffName} — {seasonCode}
+            {staffName} — {season?.season_code}
           </h1>
           <p className="text-xl text-gray-400 mt-1">EXPENSES ({expenses.length})</p>
         </div>
@@ -139,7 +188,10 @@ export default function ExpensesPage() {
       {expenses.length > 0 && (
         <div className="bg-red-700 rounded-3xl p-6 mb-8 max-w-sm">
           <p className="text-xl font-bold">TOTAL EXPENSES</p>
-          <p className="text-5xl font-bold">${total.toFixed(2)}</p>
+          <p className="text-5xl font-bold">${grandTotal.toFixed(2)}</p>
+          {!season?.date_conclusion && (
+            <p className="text-sm mt-2 opacity-80">Running — updated daily until conclusion</p>
+          )}
         </div>
       )}
 
@@ -155,7 +207,18 @@ export default function ExpensesPage() {
               className="bg-gray-900 border border-gray-800 rounded-3xl p-6 flex items-center justify-between"
             >
               <div>
-                <h2 className="text-2xl font-bold">${Number(expense.amount).toFixed(2)}</h2>
+                {expense.type === 'SINGLE' ? (
+                  <h2 className="text-2xl font-bold">${Number(expense.amount).toFixed(2)}</h2>
+                ) : (
+                  <>
+                    <h2 className="text-2xl font-bold">
+                      ${season ? calculateRunningTotal(expense, season).toFixed(2) : '0.00'}
+                    </h2>
+                    <p className="text-lg text-gray-400">
+                      ${Number(expense.amount).toFixed(2)} / {expense.type.toLowerCase()} × {season ? formatRunningLabel(expense, season) : ''}
+                    </p>
+                  </>
+                )}
                 {expense.description && (
                   <p className="text-lg text-white">{expense.description}</p>
                 )}
@@ -163,7 +226,9 @@ export default function ExpensesPage() {
                 {expense.source && (
                   <p className="text-lg text-gray-400">{expense.source}</p>
                 )}
-                <p className="text-lg text-gray-400">{formatDate(expense.expense_date)}</p>
+                {expense.type === 'SINGLE' && (
+                  <p className="text-lg text-gray-400">{formatDate(expense.expense_date)}</p>
+                )}
               </div>
 
               <div className="flex gap-3 flex-wrap">
