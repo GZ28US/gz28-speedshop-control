@@ -59,7 +59,6 @@ export default function RidesPage() {
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
 
-      {/* Custom confirm modal */}
       {confirmId && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-3xl p-8 max-w-sm w-full mx-4">
@@ -135,9 +134,12 @@ export default function RidesPage() {
                   EDIT
                 </Link>
 
-                <button className="bg-gray-700 hover:bg-gray-600 px-5 py-3 rounded-2xl font-bold">
+                <Link
+                  href={`/rides/${ride.id}/invoices`}
+                  className="bg-gray-700 hover:bg-gray-600 px-5 py-3 rounded-2xl font-bold"
+                >
                   INVOICES
-                </button>
+                </Link>
 
                 <button className="bg-gray-700 hover:bg-gray-600 px-5 py-3 rounded-2xl font-bold">
                   GLOBAL BALANCE
