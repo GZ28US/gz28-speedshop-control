@@ -54,25 +54,13 @@ export default function ViewInvoicePage() {
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
-    // Load ride
-    const { data: rideData } = await supabase
-      .from('rides')
-      .select('*')
-      .eq('id', rideId)
-      .single()
-
+    const { data: rideData } = await supabase.from('rides').select('*').eq('id', rideId).single()
     if (rideData) {
       setRide(rideData)
       setProjectCode(rideData.project_code || '')
       setProjectName(rideData.project_name || '')
-
-      // Load client separately if ride has client_id
       if (rideData.client_id) {
-        const { data: clientData } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('id', rideData.client_id)
-          .single()
+        const { data: clientData } = await supabase.from('clients').select('*').eq('id', rideData.client_id).single()
         if (clientData) setClient(clientData)
       }
     }
@@ -111,6 +99,19 @@ export default function ViewInvoicePage() {
     return new Date(invoice.delivery_date + 'T00:00:00') <= today ? 'CLOSED' : 'OPEN'
   }
 
+  function handlePrint() {
+    if (!invoice) return
+    const code = invoice.invoice_code.replace(/\./g, '_')
+    const project = (ride?.project_name || '').replace(/\s+/g, '_')
+    const svc = (invoice.service || '').replace(/\s+/g, '_')
+    const parts = [code, project, svc].filter(Boolean).join('_')
+    const filename = `GZ28_V8_SpeedShop_-_INVOICE_${parts}`
+    const prev = document.title
+    document.title = filename
+    window.print()
+    setTimeout(() => { document.title = prev }, 1000)
+  }
+
   if (loading) return (
     <main className="min-h-screen bg-black text-white p-8"><Header /><p className="text-2xl text-gray-400">Loading...</p></main>
   )
@@ -143,10 +144,6 @@ export default function ViewInvoicePage() {
   const labelClass = 'text-gray-400 font-bold'
   const sectionClass = 'bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden'
 
-  // Vehicle display string
-  const vehicleLine = [ride?.manufacturer, ride?.brand, ride?.model, ride?.version].filter(Boolean).join(' — ')
-  const vehicleYear = ride?.year ? String(ride.year) : null
-
   return (
     <>
       <style>{`
@@ -155,84 +152,106 @@ export default function ViewInvoicePage() {
           body { background: white !important; margin: 0; }
           .no-print { display: none !important; }
           .print-page { display: block !important; }
-          @page { margin: 0.35in; size: letter; }
+          @page { margin: 0.25in; size: letter; }
         }
         .print-page { display: none; }
 
         .pi * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        .pi { position: relative; background: white; color: #111; font-size: 10px; }
+        .pi { background: white; color: #111; font-size: 9px; position: relative; }
 
+        /* Watermark */
         .pi-watermark {
-          position: absolute;
+          position: fixed;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          opacity: 0.06;
-          width: 420px;
+          opacity: 0.055;
+          width: 500px;
           pointer-events: none;
           z-index: 0;
         }
         .pi-content { position: relative; z-index: 1; }
 
+        /* Header */
         .pi-header {
-          display: flex;
-          justify-content: space-between;
+          display: grid;
+          grid-template-columns: 130px 1fr 130px;
           align-items: center;
           border-bottom: 2px solid #111;
-          padding-bottom: 10px;
-          margin-bottom: 10px;
+          padding-bottom: 8px;
+          margin-bottom: 8px;
+          gap: 10px;
         }
-        .pi-logo { height: 56px; width: auto; }
+        .pi-logo { width: 130px; height: auto; display: block; }
         .pi-company { text-align: center; }
-        .pi-company-name { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .pi-company-sub { font-size: 9px; color: #555; line-height: 1.5; }
+        .pi-company-name { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .pi-company-sub { font-size: 8px; color: #555; line-height: 1.5; }
         .pi-inv-box { text-align: right; }
-        .pi-inv-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .pi-inv-num { font-size: 22px; font-weight: 900; color: #cc0000; letter-spacing: 1px; }
-        .pi-inv-date { font-size: 9px; color: #555; margin-top: 2px; }
+        .pi-inv-label { font-size: 7px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .pi-inv-num { font-size: 20px; font-weight: 900; color: #cc0000; letter-spacing: 1px; line-height: 1; }
+        .pi-inv-date { font-size: 8px; color: #555; margin-top: 2px; }
 
-        .pi-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .pi-info-block { border: 0.5px solid #ccc; border-radius: 4px; padding: 7px 10px; }
-        .pi-info-title { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; border-bottom: 0.5px solid #eee; padding-bottom: 3px; margin-bottom: 5px; }
-        .pi-info-row { display: flex; gap: 4px; margin-bottom: 2px; }
-        .pi-info-label { font-weight: 700; color: #666; min-width: 52px; font-size: 9px; flex-shrink: 0; }
-        .pi-info-value { color: #111; font-size: 9px; }
+        /* Client/Vehicle */
+        .pi-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .pi-info-block { border: 0.5px solid #ccc; border-radius: 3px; padding: 5px 8px; }
+        .pi-info-title { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; border-bottom: 0.5px solid #eee; padding-bottom: 2px; margin-bottom: 3px; }
+        .pi-info-row { display: flex; gap: 3px; margin-bottom: 1px; }
+        .pi-info-label { font-weight: 700; color: #666; min-width: 50px; font-size: 8px; flex-shrink: 0; }
+        .pi-info-value { color: #111; font-size: 8px; }
 
-        .pi-sec { margin-bottom: 9px; }
-        .pi-sec-title { background: #111; color: white; font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; }
+        /* Section */
+        .pi-sec { margin-bottom: 7px; }
+        .pi-sec-title { background: #111; color: white; font-weight: 700; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; }
 
-        .pi-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        /* Tables */
+        .pi-table { width: 100%; border-collapse: collapse; font-size: 8px; }
         .pi-table thead tr { background: #e0e0e0; }
-        .pi-table thead th { padding: 3px 8px; text-align: left; font-weight: 700; font-size: 8px; text-transform: uppercase; border: 0.5px solid #bbb; }
+        .pi-table thead th { padding: 2px 6px; text-align: left; font-weight: 700; font-size: 7px; text-transform: uppercase; border: 0.5px solid #bbb; }
         .pi-table thead th.r { text-align: right; }
-        .pi-table tbody td { padding: 3px 8px; border-left: 0.5px solid #e8e8e8; border-right: 0.5px solid #e8e8e8; border-bottom: 0.5px solid #ececec; }
+        .pi-table tbody td { padding: 2px 6px; border-left: 0.5px solid #e8e8e8; border-right: 0.5px solid #e8e8e8; border-bottom: 0.5px solid #ececec; }
         .pi-table tbody tr:nth-child(even) td { background: #fafafa; }
         .pi-table td.r { text-align: right; }
+        .pi-subtotal td { background: #efefef !important; font-weight: 700; padding: 2px 6px; border-top: 1px solid #bbb !important; }
+        .pi-taxes td { background: #cc0000 !important; color: white !important; font-weight: 700; padding: 2px 6px; }
+        .pi-ptotal td { background: #111 !important; color: white !important; font-weight: 900; font-size: 9px; padding: 3px 6px; }
+        .pi-stotal td { background: #111 !important; color: white !important; font-weight: 900; font-size: 9px; padding: 3px 6px; }
 
-        .pi-subtotal td { background: #efefef !important; font-weight: 700; padding: 3px 8px; border-top: 1px solid #bbb !important; }
-        .pi-taxes td { background: #cc0000 !important; color: white !important; font-weight: 700; padding: 3px 8px; }
-        .pi-ptotal td { background: #111 !important; color: white !important; font-weight: 900; font-size: 10px; padding: 4px 8px; }
-        .pi-stotal td { background: #111 !important; color: white !important; font-weight: 900; font-size: 10px; padding: 4px 8px; }
-
-        .pi-totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 9px; }
-        .pi-totals-tbl { width: 270px; border-collapse: collapse; font-size: 9px; }
-        .pi-totals-tbl td { padding: 3px 8px; }
+        /* Totals */
+        .pi-totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 7px; }
+        .pi-totals-tbl { width: 250px; border-collapse: collapse; font-size: 8px; }
+        .pi-totals-tbl td { padding: 2px 6px; }
         .pi-totals-tbl .r { text-align: right; }
         .pi-psrow td { background: #f0f0f0; font-weight: 700; }
         .pi-discrow td { background: #f0f0f0; font-weight: 700; color: #cc0000; }
-        .pi-grandrow td { background: #1a1a2e !important; color: #f0c040 !important; font-weight: 900; font-size: 12px; padding: 6px 8px; border-top: 2px solid #f0c040 !important; }
+        .pi-grandrow td { background: #1a1a2e !important; color: #f0c040 !important; font-weight: 900; font-size: 11px; padding: 5px 6px; border-top: 2px solid #f0c040 !important; }
 
-        .pi-pay-subtotal td { background: #efefef !important; font-weight: 700; padding: 3px 8px; border-top: 1px solid #bbb !important; }
-        .pi-balance td { background: #1a1a2e !important; color: #4ade80 !important; font-weight: 900; font-size: 11px; padding: 5px 8px; }
+        /* Payments */
+        .pi-pay-subtotal td { background: #efefef !important; font-weight: 700; padding: 2px 6px; border-top: 1px solid #bbb !important; }
+        .pi-balance td { background: #1a1a2e !important; color: #4ade80 !important; font-weight: 900; font-size: 10px; padding: 4px 6px; }
 
-        .pi-notes { border: 0.5px solid #ccc; border-radius: 4px; padding: 8px 14px; margin-bottom: 10px; text-align: center; }
-        .pi-notes-title { font-weight: 700; text-transform: uppercase; font-size: 8px; letter-spacing: 0.5px; color: #888; margin-bottom: 5px; }
-        .pi-notes p { font-size: 9px; margin-bottom: 2px; }
+        /* Notes */
+        .pi-notes { border: 0.5px solid #ccc; border-radius: 3px; padding: 6px 12px; margin-bottom: 8px; text-align: center; }
+        .pi-notes-title { font-weight: 700; text-transform: uppercase; font-size: 7px; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
+        .pi-notes p { font-size: 8px; margin-bottom: 1px; }
 
-        .pi-sig { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 14px; border-top: 1px solid #ccc; padding-top: 10px; }
+        /* Signature — always at bottom, never breaks */
+        .pi-sig {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          margin-top: 10px;
+          border-top: 1px solid #ccc;
+          padding-top: 8px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
         .pi-sig-block { text-align: center; }
-        .pi-sig-line { border-bottom: 1px solid #333; height: 30px; margin-bottom: 4px; }
-        .pi-sig-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pi-sig-line { border-bottom: 1px solid #333; height: 24px; margin-bottom: 3px; }
+        .pi-sig-label { font-size: 7px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Force everything to fit one page */
+        .pi-content { page-break-inside: avoid; }
+        .pi-table tbody tr { page-break-inside: avoid; }
       `}</style>
 
       {/* ── PRINT PAGE ── */}
@@ -242,7 +261,7 @@ export default function ViewInvoicePage() {
           <img src="/logo_gz28.jpg" className="pi-watermark" alt="" aria-hidden="true" />
 
           <div className="pi-content">
-            {/* Header */}
+            {/* Header — logo | company center | invoice right */}
             <div className="pi-header">
               <img src="/logo_gz28.jpg" className="pi-logo" alt="GZ28 Logo" />
               <div className="pi-company">
@@ -276,7 +295,7 @@ export default function ViewInvoicePage() {
                 {ride?.manufacturer && <div className="pi-info-row"><span className="pi-info-label">Make:</span><span className="pi-info-value">{ride.manufacturer}</span></div>}
                 {ride?.brand && <div className="pi-info-row"><span className="pi-info-label">Brand:</span><span className="pi-info-value">{ride.brand}</span></div>}
                 {ride?.model && <div className="pi-info-row"><span className="pi-info-label">Model:</span><span className="pi-info-value">{ride.model}{ride.version ? ` — ${ride.version}` : ''}</span></div>}
-                {vehicleYear && <div className="pi-info-row"><span className="pi-info-label">Year:</span><span className="pi-info-value">{vehicleYear}</span></div>}
+                {ride?.year && <div className="pi-info-row"><span className="pi-info-label">Year:</span><span className="pi-info-value">{ride.year}</span></div>}
                 {ride?.color && <div className="pi-info-row"><span className="pi-info-label">Color:</span><span className="pi-info-value">{ride.color}</span></div>}
                 {ride?.vin && <div className="pi-info-row"><span className="pi-info-label">VIN:</span><span className="pi-info-value">{ride.vin}</span></div>}
                 {ride?.plate && <div className="pi-info-row"><span className="pi-info-label">Plate:</span><span className="pi-info-value">{ride.plate}</span></div>}
@@ -291,8 +310,8 @@ export default function ViewInvoicePage() {
               <div className="pi-sec-title">Parts</div>
               <table className="pi-table">
                 <thead><tr>
-                  <th style={{width:'55%'}}>Description</th>
-                  <th className="r" style={{width:'17%'}}>Unit Price</th>
+                  <th style={{width:'56%'}}>Description</th>
+                  <th className="r" style={{width:'16%'}}>Unit Price</th>
                   <th className="r" style={{width:'8%'}}>Qt</th>
                   <th className="r" style={{width:'20%'}}>Total</th>
                 </tr></thead>
@@ -400,7 +419,7 @@ export default function ViewInvoicePage() {
             <p className="text-gray-400 text-xl">{projectCode}{projectName ? ` — ${projectName}` : ''}</p>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => window.print()} className="bg-white text-black hover:bg-gray-200 px-6 py-4 rounded-2xl text-xl font-bold">🖨 PRINT</button>
+            <button onClick={handlePrint} className="bg-white text-black hover:bg-gray-200 px-6 py-4 rounded-2xl text-xl font-bold">🖨 PRINT</button>
             <Link href={`/rides/${rideId}/invoices`} className="bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-2xl text-xl font-bold">BACK</Link>
             <Link href={`/rides/${rideId}/invoices/edit/${invoiceId}`} className="bg-blue-700 hover:bg-blue-600 px-6 py-4 rounded-2xl text-xl font-bold">EDIT</Link>
           </div>
