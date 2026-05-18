@@ -11,7 +11,9 @@ type StaffMember = {
   name: string
   position: string
   latestConclusion: string | null
+  latestEntry: string | null
   hasActiveSeason: boolean
+  hasAnySeason: boolean
   totalExpenses: number
 }
 
@@ -71,30 +73,58 @@ export default function StaffPage() {
 
     const staffWithData: StaffMember[] = staffData.map((member) => {
       const memberSeasons = seasonsData?.filter(s => s.staff_id === member.id) || []
+      const hasAnySeason = memberSeasons.length > 0
       const hasActiveSeason = memberSeasons.some(s => !s.date_conclusion)
+
       const concluded = memberSeasons
         .filter(s => s.date_conclusion)
-        .map(s => s.date_conclusion)
+        .map(s => s.date_conclusion as string)
         .sort((a, b) => b.localeCompare(a))
       const latestConclusion = concluded[0] || null
+
+      const entries = memberSeasons
+        .filter(s => s.date_entry)
+        .map(s => s.date_entry as string)
+        .sort((a, b) => b.localeCompare(a))
+      const latestEntry = entries[0] || null
+
       const totalExpenses = memberSeasons.reduce((sum, s) => sum + calcSeasonTotal(s.id, s.date_entry, s.date_conclusion), 0)
 
       return {
         ...member,
         latestConclusion,
+        latestEntry,
         hasActiveSeason,
+        hasAnySeason,
         totalExpenses,
       }
     })
 
     staffWithData.sort((a, b) => {
+      // 1. Active seasons first
       if (a.hasActiveSeason && !b.hasActiveSeason) return -1
       if (!a.hasActiveSeason && b.hasActiveSeason) return 1
-      if (a.latestConclusion && b.latestConclusion) {
-        return b.latestConclusion.localeCompare(a.latestConclusion)
+
+      // 2. Both active — sort by latest entry descending
+      if (a.hasActiveSeason && b.hasActiveSeason) {
+        if (a.latestEntry && b.latestEntry) return b.latestEntry.localeCompare(a.latestEntry)
+        if (a.latestEntry) return -1
+        if (b.latestEntry) return 1
+        return a.name.localeCompare(b.name)
       }
-      if (a.latestConclusion && !b.latestConclusion) return 1
-      if (!a.latestConclusion && b.latestConclusion) return -1
+
+      // 3. Both concluded — sort by latest conclusion descending
+      if (a.hasAnySeason && b.hasAnySeason) {
+        if (a.latestConclusion && b.latestConclusion) return b.latestConclusion.localeCompare(a.latestConclusion)
+        if (a.latestConclusion) return -1
+        if (b.latestConclusion) return 1
+        return a.name.localeCompare(b.name)
+      }
+
+      // 4. Members with no seasons go to the bottom
+      if (a.hasAnySeason && !b.hasAnySeason) return -1
+      if (!a.hasAnySeason && b.hasAnySeason) return 1
+
       return a.name.localeCompare(b.name)
     })
 
