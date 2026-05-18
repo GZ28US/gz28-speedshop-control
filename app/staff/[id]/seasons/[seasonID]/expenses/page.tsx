@@ -154,9 +154,6 @@ export default function ExpensesPage() {
     <main className="min-h-screen bg-black text-white p-8">
       <Header />
 
-      {/* DEBUG - remove after checking */}
-      <p className="text-yellow-400 text-sm mb-4">{JSON.stringify(params)}</p>
-
       {confirmId && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-3xl p-8 max-w-sm w-full mx-4">
