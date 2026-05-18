@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
+import DatePicker from '@/components/DatePicker'
 import { supabase } from '@/lib/supabase'
 
 export default function EditSeasonPage() {
@@ -99,25 +100,17 @@ export default function EditSeasonPage() {
           />
         </div>
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">DATE OF ENTRY</label>
-          <input
-            type="date"
-            value={dateEntry}
-            onChange={(e) => setDateEntry(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <DatePicker
+          label="DATE OF ENTRY"
+          value={dateEntry}
+          onChange={setDateEntry}
+        />
 
-        <div>
-          <label className="block mb-2 text-lg font-bold">DATE OF CONCLUSION</label>
-          <input
-            type="date"
-            value={dateConclusion}
-            onChange={(e) => setDateConclusion(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <DatePicker
+          label="DATE OF CONCLUSION"
+          value={dateConclusion}
+          onChange={setDateConclusion}
+        />
 
         <button
           onClick={saveSeason}
