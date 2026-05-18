@@ -27,6 +27,11 @@ type Payment = {
   source: string
 }
 
+type Note = {
+  id?: string
+  note: string
+}
+
 const paymentSources = ['CASH', 'ACH', 'ZELLE', 'CHECK']
 
 export default function EditInvoicePage() {
@@ -57,6 +62,10 @@ export default function EditInvoicePage() {
   const [newPayment, setNewPayment] = useState<Payment>({ amount: '', payment_date: '', source: 'CASH' })
   const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
   const [editingPayment, setEditingPayment] = useState<Payment>({ amount: '', payment_date: '', source: 'CASH' })
+  const [notes, setNotes] = useState<Note[]>([])
+  const [newNote, setNewNote] = useState('')
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
+  const [editingNote, setEditingNote] = useState('')
 
   useEffect(() => { loadRide(); loadInvoice() }, [])
 
@@ -85,6 +94,9 @@ export default function EditInvoicePage() {
 
     const { data: paymentsData } = await supabase.from('invoice_payments').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: true })
     if (paymentsData) setPayments(paymentsData.map(p => ({ id: p.id, amount: String(p.amount), payment_date: p.payment_date || '', source: p.source || 'CASH' })))
+
+    const { data: notesData } = await supabase.from('invoice_notes').select('*').eq('invoice_id', invoiceId).order('created_at', { ascending: true })
+    if (notesData) setNotes(notesData.map(n => ({ id: n.id, note: n.note })))
 
     setLoading(false)
   }
@@ -160,17 +172,36 @@ export default function EditInvoicePage() {
     if (!editingPayment.amount) { alert('Please enter an amount'); return }
     const payment = payments[editingPaymentIndex!]
     if (payment.id) {
-      const { error } = await supabase.from('invoice_payments').update({
-        amount: parseFloat(editingPayment.amount),
-        payment_date: isValidDate(editingPayment.payment_date) ? editingPayment.payment_date : null,
-        source: editingPayment.source,
-      }).eq('id', payment.id)
+      const { error } = await supabase.from('invoice_payments').update({ amount: parseFloat(editingPayment.amount), payment_date: isValidDate(editingPayment.payment_date) ? editingPayment.payment_date : null, source: editingPayment.source }).eq('id', payment.id)
       if (error) { alert(error.message); return }
     }
     const updated = [...payments]; updated[editingPaymentIndex!] = { ...editingPayment, id: payment.id }; setPayments(updated)
     setEditingPaymentIndex(null); setEditingPayment({ amount: '', payment_date: '', source: 'CASH' })
   }
   function cancelEditPayment() { setEditingPaymentIndex(null); setEditingPayment({ amount: '', payment_date: '', source: 'CASH' }) }
+
+  // Notes
+  function addNote() {
+    if (!newNote.trim()) { alert('Please enter a note'); return }
+    setNotes([...notes, { note: newNote.trim() }]); setNewNote('')
+  }
+  async function removeNote(index: number) {
+    const n = notes[index]
+    if (n.id) await supabase.from('invoice_notes').delete().eq('id', n.id)
+    setNotes(notes.filter((_, i) => i !== index))
+  }
+  function startEditNote(index: number) { setEditingNoteIndex(index); setEditingNote(notes[index].note) }
+  async function saveEditNote() {
+    if (!editingNote.trim()) { alert('Please enter a note'); return }
+    const n = notes[editingNoteIndex!]
+    if (n.id) {
+      const { error } = await supabase.from('invoice_notes').update({ note: editingNote.trim() }).eq('id', n.id)
+      if (error) { alert(error.message); return }
+    }
+    const updated = [...notes]; updated[editingNoteIndex!] = { ...n, note: editingNote.trim() }; setNotes(updated)
+    setEditingNoteIndex(null); setEditingNote('')
+  }
+  function cancelEditNote() { setEditingNoteIndex(null); setEditingNote('') }
 
   // Calculations
   const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
@@ -202,21 +233,19 @@ export default function EditInvoicePage() {
       const { error: e } = await supabase.from('invoice_parts').insert(newParts.map(p => ({ invoice_id: invoiceId, description: p.description, unit_price: parseFloat(p.unit_price), quantity: parseFloat(p.quantity) })))
       if (e) { alert(e.message); return }
     }
-
     const newServices = services.filter(s => !s.id)
     if (newServices.length > 0) {
       const { error: e } = await supabase.from('invoice_services').insert(newServices.map(s => ({ invoice_id: invoiceId, description: s.description, price: parseFloat(s.price) || 0 })))
       if (e) { alert(e.message); return }
     }
-
     const newPayments = payments.filter(p => !p.id)
     if (newPayments.length > 0) {
-      const { error: e } = await supabase.from('invoice_payments').insert(newPayments.map(p => ({
-        invoice_id: invoiceId,
-        amount: parseFloat(p.amount),
-        payment_date: isValidDate(p.payment_date) ? p.payment_date : null,
-        source: p.source,
-      })))
+      const { error: e } = await supabase.from('invoice_payments').insert(newPayments.map(p => ({ invoice_id: invoiceId, amount: parseFloat(p.amount), payment_date: isValidDate(p.payment_date) ? p.payment_date : null, source: p.source })))
+      if (e) { alert(e.message); return }
+    }
+    const newNotes = notes.filter(n => !n.id)
+    if (newNotes.length > 0) {
+      const { error: e } = await supabase.from('invoice_notes').insert(newNotes.map(n => ({ invoice_id: invoiceId, note: n.note })))
       if (e) { alert(e.message); return }
     }
 
@@ -446,7 +475,6 @@ export default function EditInvoicePage() {
             </div>
             <DatePicker label="DATE" value={newPayment.payment_date} onChange={(v) => setNewPayment({ ...newPayment, payment_date: v })} />
             <button onClick={addPayment} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PAYMENT</button>
-
             {payments.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {payments.map((payment, index) => (
@@ -490,7 +518,6 @@ export default function EditInvoicePage() {
                 ))}
               </div>
             )}
-
             <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
               <span className="text-gray-400 font-bold">TOTAL PAID</span>
               <span className="text-xl font-bold">{formatUSD(totalPaid)}</span>
@@ -502,9 +529,49 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
+        {/* NOTES SECTION */}
         <div>
-          <label className="block mb-2 text-lg font-bold">ADD EXPENSE</label>
-          <button className="w-full bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-2xl text-xl font-bold text-left" onClick={() => alert('Coming soon')}>+ ADD EXPENSE</button>
+          <label className="block mb-3 text-lg font-bold">NOTES</label>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+            <textarea
+              placeholder="Enter a note..."
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              rows={3}
+              className="w-full bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none"
+            />
+            <button onClick={addNote} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD NOTE</button>
+            {notes.length > 0 && (
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+                {notes.map((n, index) => (
+                  <div key={index}>
+                    {editingNoteIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <textarea
+                          value={editingNote}
+                          onChange={(e) => setEditingNote(e.target.value)}
+                          rows={3}
+                          className="w-full bg-gray-900 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none"
+                        />
+                        <div className="flex gap-3">
+                          <button onClick={saveEditNote} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditNote} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-start justify-between gap-4 px-4 py-3 ${index < notes.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <p className="flex-1 text-base text-gray-300 whitespace-pre-wrap">{n.note}</p>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditNote(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removeNote(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <button onClick={saveInvoice} className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">

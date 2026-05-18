@@ -24,6 +24,10 @@ type Payment = {
   source: string
 }
 
+type Note = {
+  note: string
+}
+
 const paymentSources = ['CASH', 'ACH', 'ZELLE', 'CHECK']
 
 export default function NewInvoicePage() {
@@ -52,6 +56,10 @@ export default function NewInvoicePage() {
   const [newPayment, setNewPayment] = useState<Payment>({ amount: '', payment_date: '', source: 'CASH' })
   const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
   const [editingPayment, setEditingPayment] = useState<Payment>({ amount: '', payment_date: '', source: 'CASH' })
+  const [notes, setNotes] = useState<Note[]>([])
+  const [newNote, setNewNote] = useState('')
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null)
+  const [editingNote, setEditingNote] = useState('')
 
   useEffect(() => { loadRide() }, [])
 
@@ -127,6 +135,20 @@ export default function NewInvoicePage() {
   }
   function cancelEditPayment() { setEditingPaymentIndex(null); setEditingPayment({ amount: '', payment_date: '', source: 'CASH' }) }
 
+  // Notes
+  function addNote() {
+    if (!newNote.trim()) { alert('Please enter a note'); return }
+    setNotes([...notes, { note: newNote.trim() }]); setNewNote('')
+  }
+  function removeNote(index: number) { setNotes(notes.filter((_, i) => i !== index)) }
+  function startEditNote(index: number) { setEditingNoteIndex(index); setEditingNote(notes[index].note) }
+  function saveEditNote() {
+    if (!editingNote.trim()) { alert('Please enter a note'); return }
+    const updated = [...notes]; updated[editingNoteIndex!] = { note: editingNote.trim() }; setNotes(updated)
+    setEditingNoteIndex(null); setEditingNote('')
+  }
+  function cancelEditNote() { setEditingNoteIndex(null); setEditingNote('') }
+
   // Calculations
   const partsSubTotal = parts.reduce((sum, p) => sum + getPartTotal(p), 0)
   const floridaTaxesPct = parseFloat(floridaTaxes) || 0
@@ -154,27 +176,19 @@ export default function NewInvoicePage() {
     if (error || !invoice) { alert(error?.message || 'Error saving invoice'); return }
 
     if (parts.length > 0) {
-      const { error: e } = await supabase.from('invoice_parts').insert(parts.map(p => ({
-        invoice_id: invoice.id, description: p.description,
-        unit_price: parseFloat(p.unit_price), quantity: parseFloat(p.quantity),
-      })))
+      const { error: e } = await supabase.from('invoice_parts').insert(parts.map(p => ({ invoice_id: invoice.id, description: p.description, unit_price: parseFloat(p.unit_price), quantity: parseFloat(p.quantity) })))
       if (e) { alert(e.message); return }
     }
-
     if (services.length > 0) {
-      const { error: e } = await supabase.from('invoice_services').insert(services.map(s => ({
-        invoice_id: invoice.id, description: s.description, price: parseFloat(s.price) || 0,
-      })))
+      const { error: e } = await supabase.from('invoice_services').insert(services.map(s => ({ invoice_id: invoice.id, description: s.description, price: parseFloat(s.price) || 0 })))
       if (e) { alert(e.message); return }
     }
-
     if (payments.length > 0) {
-      const { error: e } = await supabase.from('invoice_payments').insert(payments.map(p => ({
-        invoice_id: invoice.id,
-        amount: parseFloat(p.amount),
-        payment_date: isValidDate(p.payment_date) ? p.payment_date : null,
-        source: p.source,
-      })))
+      const { error: e } = await supabase.from('invoice_payments').insert(payments.map(p => ({ invoice_id: invoice.id, amount: parseFloat(p.amount), payment_date: isValidDate(p.payment_date) ? p.payment_date : null, source: p.source })))
+      if (e) { alert(e.message); return }
+    }
+    if (notes.length > 0) {
+      const { error: e } = await supabase.from('invoice_notes').insert(notes.map(n => ({ invoice_id: invoice.id, note: n.note })))
       if (e) { alert(e.message); return }
     }
 
@@ -400,7 +414,6 @@ export default function NewInvoicePage() {
             </div>
             <DatePicker label="DATE" value={newPayment.payment_date} onChange={(v) => setNewPayment({ ...newPayment, payment_date: v })} />
             <button onClick={addPayment} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD PAYMENT</button>
-
             {payments.length > 0 && (
               <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
                 {payments.map((payment, index) => (
@@ -444,8 +457,6 @@ export default function NewInvoicePage() {
                 ))}
               </div>
             )}
-
-            {/* Total paid & balance */}
             <div className="border-t border-gray-700 pt-3 flex justify-between items-center">
               <span className="text-gray-400 font-bold">TOTAL PAID</span>
               <span className="text-xl font-bold">{formatUSD(totalPaid)}</span>
@@ -457,9 +468,49 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
+        {/* NOTES SECTION */}
         <div>
-          <label className="block mb-2 text-lg font-bold">ADD EXPENSE</label>
-          <button className="w-full bg-gray-700 hover:bg-gray-600 px-6 py-4 rounded-2xl text-xl font-bold text-left" onClick={() => alert('Coming soon')}>+ ADD EXPENSE</button>
+          <label className="block mb-3 text-lg font-bold">NOTES</label>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+            <textarea
+              placeholder="Enter a note..."
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              rows={3}
+              className="w-full bg-gray-800 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none"
+            />
+            <button onClick={addNote} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">+ ADD NOTE</button>
+            {notes.length > 0 && (
+              <div className="border border-gray-700 rounded-2xl overflow-hidden mt-2">
+                {notes.map((n, index) => (
+                  <div key={index}>
+                    {editingNoteIndex === index ? (
+                      <div className="p-4 space-y-3 bg-gray-800 border-l-4 border-blue-600">
+                        <textarea
+                          value={editingNote}
+                          onChange={(e) => setEditingNote(e.target.value)}
+                          rows={3}
+                          className="w-full bg-gray-900 border border-gray-600 rounded-2xl px-4 py-3 text-lg resize-none"
+                        />
+                        <div className="flex gap-3">
+                          <button onClick={saveEditNote} className="bg-green-700 hover:bg-green-600 px-5 py-3 rounded-2xl font-bold text-lg">SAVE</button>
+                          <button onClick={cancelEditNote} className="bg-gray-600 hover:bg-gray-500 px-5 py-3 rounded-2xl font-bold text-lg">CANCEL</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`flex items-start justify-between gap-4 px-4 py-3 ${index < notes.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                        <p className="flex-1 text-base text-gray-300 whitespace-pre-wrap">{n.note}</p>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => startEditNote(index)} className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded-xl font-bold text-sm">EDIT</button>
+                          <button onClick={() => removeNote(index)} className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-xl font-bold text-sm">REMOVE</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <button onClick={saveInvoice} className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl text-xl font-bold">
